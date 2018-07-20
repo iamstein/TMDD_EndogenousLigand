@@ -1,0 +1,210 @@
+---
+title: "Explore agreement between theory and experiment"
+author: "Andy Stein"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r, warning=FALSE}
+suppressMessages(source("ams_initialize_script.R"))
+```
+
+### Set initial parameters and functions
+
+```{r}
+dose.nmol.range = lseq(1, 1e5, 6)
+
+model = ivsc_4cmtct_shedct()
+
+tmax = 200
+tau  = 1
+compartment = 2
+
+compare.theory.sim = function(model=model, param.as.double=param.as.double,
+                          dose.nmol.range = dose.nmol.range,
+                          tmax=tmax,tau=tau,dt=dt,compartment=compartment) {
+
+  df_sim = data.frame() # put all simulations for different dose into one data frame
+  for (dose.nmol in dose.nmol.range){
+    row = lumped.parameters.simulation(model,
+      param.as.double, dose.nmol, tmax, tau, compartment)
+    df_sim = rbind(df_sim, row)
+  }
+  df_sim$Dose = dose.nmol.range
+  
+  df_thy = data.frame() # put all theoretical calculations of lumped parameters at different dose together
+  for (dose.nmol in dose.nmol.range){
+    row = lumped.parameters.theory(param.as.double=param.as.double, 
+                                   dose.nmol=dose.nmol, 
+                                   tau=tau)
+    df_thy = rbind(df_thy, row)
+  }
+  df_thy = df_thy %>%
+    mutate(Dose = dose.nmol.range,
+           AFIRT = AFIRT.Kssd)
+  
+  df_compare = bind_rows(df_thy,df_sim)
+  df_compare = df_compare %>%
+    arrange(Dose,type) %>%
+    mutate_if(is.numeric,signif,2)
+    
+  #do a single simulation to make sure model is at steady state
+  out = simulation(model=model, param.as.double=param.as.double, 
+        dose.nmol=max(dose.nmol.range), tmax=tmax, tau=tau) %>%
+    select(time,D1,D3,M3,DM3,Mfree.pct) %>%
+    gather(cmt,value,-c(time))
+  
+  g = ggplot(out,aes(x=time,y=value,group=cmt,color=cmt))
+  g = g + geom_line()
+  g = g + scale.y.log10()
+  print(g)
+  
+  #plot theory vs simulation
+  df_plot = df_compare %>%
+    select(-contains("AFIRT"),AFIRT) %>%
+    gather(param,value,-c(type,Dose))
+  
+  g = ggplot(df_plot, aes(Dose, value, group=type, color=type,linetype=type))
+  g = g + scale.x.log10()
+  g = g + scale.y.log10()
+  g = g + geom_line()
+  g = g + geom_point()
+  g = g + facet_wrap(~param,scales = "free_y")
+  print(g)
+
+  return(df_compare)
+}
+```
+
+### Compare with ivsc_4cmtct_shedct_param.xlsx
+```{r, warning=FALSE}
+param.as.double =  read.param.file("../data/ivsc_4cmtct_shedct_param.xlsx")
+param.as.double["keDM3"] = .5 #setting this value so it will accumulate
+
+df_compare = compare.theory.sim(model = model,
+                                param.as.double = param.as.double,
+                                dose.nmol.range = dose.nmol.range,
+                                tmax = tmax,
+                                tau  = tau,
+                                compartment = compartment)
+#kable(df_compare)
+
+
+```
+
+### Compare with Herceptin
+Because the receptor density of Herceptin is high, it make sense you need much higher doses to get good agreement
+
+```{r, warning=FALSE}
+
+param.as.double = 
+param.as.double = read.param.file("../data/ModelF_Herceptin_Params.xlsx")
+param.as.double["keDM3"] = .1 #setting this value to get accumulation
+
+pdb.herceptin = param.as.double
+p.herceptin = as.data.frame(t(param.as.double))
+p.herceptin$drug = "Herceptin"
+
+
+df_compare = compare.theory.sim(model = model,
+                                param.as.double = param.as.double,
+                                dose.nmol.range = dose.nmol.range,
+                                tmax = tmax,
+                                tau  = tau,
+                                compartment = compartment)
+#kable(df_compare)
+
+```
+
+### Compare with Atezolizumab
+Currently, the drug concentration prediction is poor
+```{r, warning=FALSE}
+param.as.double = read.param.file("../data/ModelF_Atezolizumab_Params.xlsx")
+
+pdb.atezo = param.as.double
+p.atezo = as.data.frame(t(param.as.double))
+p.atezo$drug = "atezo"
+
+df_compare = compare.theory.sim(model = model,
+                                param.as.double = param.as.double,
+                                dose.nmol.range = dose.nmol.range,
+                                tmax = tmax,
+                                tau  = tau,
+                                compartment = compartment) 
+  
+  df_plot = df_compare %>%
+    select(type,Dose,contains("AFIRT"),-AFIRT) %>%
+    gather(key,value,-c(Dose,type)) %>%
+    filter(!is.na(value))
+  
+  g = ggplot(df_plot, aes(Dose, value, group=key, color=key,linetype=type))
+  g = g + scale.x.log10()
+  g = g + scale.y.log10()
+  g = g + geom_line()
+  g = g + geom_point()
+  g = g + ylab("AFIRT")
+  g = g + ggtitle("Three different theoretical AFIRT")
+  print(g)
+```
+
+
+
+
+<!-- ### Start from Herceptin case and set a few parameters to atezo values until the issues matching AFIRT reproduce. -->
+
+<!-- The parameters below are the ones that I changed (from Herceptin to Atezo) to reproduce the issue.  In particular, there is now distribution of M and DM between tumor and tissue and the koff rates are slower.  I think this means that the quasi-equilibrium assumption may no longer be valid, here, and so the model overpredicts the inhibition.  This is cool!!! -->
+
+<!-- But I still don't understand why the concentrations don't match -->
+
+<!-- ```{r, warning=FALSE} -->
+<!-- pdb.mixed = pdb.herceptin -->
+
+<!-- #keep adding variables until something goes wrong -->
+<!-- vars.atezo = c( -->
+<!--                # "keD1","k12D","k21D","VD1","k13D","k31D","CL","Q","VD2", -->
+<!--                 "kon3","koff3","Kd","kon1","koff1", -->
+<!--                # "ksynM1","ksynM3","M30","M10", -->
+<!--                # "kshedM3","kshedDM3", -->
+<!--                # "kshedM1","kshedDM1", -->
+<!--                # "keM3","keDM3", -->
+<!--                # "keM1","keDM1", -->
+<!--                # "keS1","keDS1", -->
+<!--                # "MWS","MWM","S10","S1acc", -->
+<!--                # "k13S","k13DS","k31S","k31DS", -->
+<!--                "k13M","k13DM","k31M","k31DM") -->
+
+<!-- pdb.mixed[vars.atezo] = pdb.atezo[vars.atezo] -->
+<!-- p.mixed = as.data.frame(t(pdb.mixed)) -->
+<!-- p.mixed$drug = "mixed" -->
+
+<!-- p.compare = bind_rows(p.atezo,p.mixed,p.herceptin)  -->
+<!-- drug      = p.compare$drug -->
+<!-- p.compare = t(p.compare) -->
+<!-- colnames(p.compare) = drug -->
+<!-- kable(p.compare[rownames(p.compare) %in% vars.atezo,]) -->
+
+<!-- df_compare = compare.theory.sim(model = model, -->
+<!--                                 param.as.double = pdb.mixed, -->
+<!--                                 dose.nmol.range = dose.nmol.range, -->
+<!--                                 tmax = tmax, -->
+<!--                                 tau  = tau, -->
+<!--                                 compartment = compartment)  -->
+
+<!--   df_plot = df_compare %>% -->
+<!--     select(-AFIRT.Kss,-AFIRT.Kd,-AFIRT.Kssd) %>% -->
+<!--     gather(param,value,-c(type,Dose)) -->
+
+<!--   g = ggplot(df_plot, aes(Dose, value, group=type, color=type,linetype=type)) -->
+<!--   g = g + scale.x.log10() -->
+<!--   g = g + scale.y.log10() -->
+<!--   g = g + geom_line() -->
+<!--   g = g + geom_point() -->
+<!--   g = g + facet_wrap(~param,scales = "free_y") -->
+<!--   print(g) -->
+
+<!-- ``` -->
+

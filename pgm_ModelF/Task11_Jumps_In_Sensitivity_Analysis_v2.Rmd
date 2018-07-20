@@ -1,0 +1,121 @@
+---
+title: "Task11_Jumps_In_Sensitivity_Analysis"
+author: "Hongshan Li"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+In the first plot of "Task05_Sensistivity_Analysis_pt5.Rmd", it is strange that
+AFIRT.sim jumps as ksynM3 changes from the 4th value to the 5th value
+(Take pemb as an example), because
+as indicated in the AFTIR derivation part of the writeup, Keq does not depend
+on ksynM3, i.e. AFTIR does not depend on ksynM3. This is illustrated in the 
+plots of AFTIR.Kssd, AFTIR.Kss, and AFTIR.Kd, where the dependences on ksynM3 are 
+barely noticeable. 
+
+This indicates that our approximation of Keq does not apply when ksynM3 is large 
+(or when target concentration is large). By definition
+\[
+    K_{ssd, mem} = \frac{D_3\cdot M_3}{DM_3}
+\]
+so it is reasonable that as ksynM3 gets big, $K_{ssd, mem}$ gets big. Then, we will
+not be able assume (2.2.20 of the writeup)
+\[
+    \frac{T_3}{T_{3tot}} = \frac{K_{eq}}{K_{eq} + D_3} \sim
+    \frac{K_{eq}}{D_3}
+\]
+
+Therefore, in order for the above approximation to be true, we will have to increase
+the dose for large ksynM3, so that $Keq << D_3$. 
+
+I will run a sensitivity analysis on ksynM3 with the same range of value as in
+Task05, but I will significantly increase the dose. Then, we should be able to  
+see better agreement between theory and simulation
+
+
+```{r, warning=FALSE}
+suppressMessages(source("ams_initialize_script.R"))
+suppressMessages(source("ams_initialize_script.R"))
+model = ivsc_4cmtct_shedct(target=TRUE)
+
+# test on Pemb, and run senstivity analysis on ksynM3
+drug = "Pembrolizumab"
+drug.path = paste0("../data/ModelF_", drug, "_Params.xlsx")
+parameter = "ksynM3"
+
+# Set global variables
+tmax = 26*7
+tau = 21
+compartment = 2
+
+# Load model parameters for pemb
+param.as.double = read.param.file(drug.path)
+df_param = as.data.frame(t(param.as.double))
+
+# grep ksynM3
+ksynM3.init = df_param["ksynM3"]
+
+# set the range for ksynM3
+ksynM3.range = data.frame(lapply(ksynM3.init, function(x) lseq(x*0.01, x*100, 7)))
+```
+With low dose
+```{r}
+dose.nmol = scale.mpk2nmol
+# run the sensitivity analysis on the above range
+AFIRT = compare.thy.sim(model=model,
+                    param.as.double=param.as.double,
+                    dose.nmol = dose.nmol,
+                    tmax = tmax,
+                    tau = tau,
+                    compartment = compartment,
+                    param.to.change = 'ksynM3',
+                    param.to.change.range = ksynM3.range[[1]],
+                    soluble = FALSE)
+
+# get the relevant data from the above frame
+relevant = AFIRT[c("fold.change.param", "AFIRT.Kssd", "AFIRT.Kss","AFIRT.Kd", "AFIRT.sim", "param")]
+
+relevant = relevant %>% 
+  gather(key, AFIRT.value, -param, -fold.change.param) %>%
+  filter(!is.na(AFIRT.value))
+
+g = ggplot(relevant, aes(fold.change.param, AFIRT.value, color=key, linetype=key)) +
+  scale.x.log10() + 
+  scale.y.log10() + 
+  geom_line() + 
+  geom_point()
+
+print(g)
+```
+
+With high dose (100 times higher)
+```{r}
+dose.nmol = 1000*scale.mpk2nmol
+# run the sensitivity analysis on the above range
+AFIRT = compare.thy.sim(model=model,
+                    param.as.double=param.as.double,
+                    dose.nmol = dose.nmol,
+                    tmax = tmax,
+                    tau = tau,
+                    compartment = compartment,
+                    param.to.change = 'ksynM3',
+                    param.to.change.range = ksynM3.range[[1]],
+                    soluble = FALSE)
+
+# get the relevant data from the above frame
+relevant = AFIRT[c("fold.change.param", "AFIRT.Kssd", "AFIRT.Kss","AFIRT.Kd", "AFIRT.sim", "param")]
+
+relevant = relevant %>% 
+  gather(key, AFIRT.value, -param, -fold.change.param) %>%
+  filter(!is.na(AFIRT.value))
+
+g = ggplot(relevant, aes(fold.change.param, AFIRT.value, color=key, linetype=key)) +
+  scale.x.log10() + 
+  scale.y.log10() + 
+  geom_line() + 
+  geom_point()
+
+print(g)
+```

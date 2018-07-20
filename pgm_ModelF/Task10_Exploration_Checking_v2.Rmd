@@ -1,0 +1,163 @@
+---
+title: "Explore more realistic dosing scenarios"
+author: "Andy Stein"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+### Headers
+```{r, warning=FALSE}
+suppressMessages(source("ams_initialize_script.R"))
+source("AFIRT_calculation.R")
+```
+
+### Set initial parameters and functions
+Here use doses ranging from 0.1-100 mg/kg or `r signif(.1*scale.mpk2nmol,2)`-`r signif(100*scale.mpk2nmol,2)` nmol because this is a more realistic dose range to consider. 
+
+```{r}
+dose.nmol.range = lseq(.1,100,7)*scale.mpk2nmol
+
+model = ivsc_4cmtct_shedct()
+
+tmax = 26*7 #days
+tau  = 21   #days
+compartment = 2
+```
+### Atezolizumab (Membrane-bound Target)
+Atezolizumab is dosed at 1200 mg or `r 1200*scale.mg2nmol` nmol.  Andy doesn't currently know the kon and koff rates for atezolizumab.  He guessed koff = 3/d, but it could be 10 faster.
+
+```{r, warning=FALSE}
+param.as.double = read.param.file("../data/ModelF_Atezolizumab_Params.xlsx")
+p.atezo         = as.data.frame(t(param.as.double))
+
+param.to.change = "dose"
+param.to.change.range = dose.nmol.range
+dose.nmol = median(dose.nmol.range)
+soluble = FALSE
+
+df_compare = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = param.to.change,
+                               param.to.change.range = param.to.change.range,
+                               soluble = soluble)
+
+d.long = df_compare %>%
+  select(type,dose=param.to.change,Tacc.tum,B,Cavg1,Cavg3,Cmin,AFIRT,TFIRT) %>%
+  gather(key=param,value,-c(type,dose))
+
+g = ggplot(data=d.long,aes(x=dose,y=value,color=type,linetype=type))
+g = g + geom_line()
+g = g + scale.y.log10()
+g = g + scale.x.log10()
+g = g + facet_wrap(~param,scales="free_y")
+print(g)
+```
+
+### Atezo with large k13DM - theory gets worse
+
+```{r, warnings=FALSE}
+#param.as.double["kshedDM3"] = 0
+param.as.double["k13DM"] = 50
+
+df_compare = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = param.to.change,
+                               param.to.change.range = param.to.change.range,
+                               soluble = soluble)
+
+d.long = df_compare %>%
+  select(type,dose=param.to.change,Tacc.tum,B,Cavg1,Cavg3,Cmin,AFIRT,TFIRT) %>%
+  gather(key=param,value,-c(type,dose))
+
+g = ggplot(data=d.long,aes(x=dose,y=value,color=type,linetype=type))
+g = g + geom_line()
+g = g + scale.y.log10()
+g = g + scale.x.log10()
+g = g + facet_wrap(~param,scales = "free_y")
+print(g)
+```
+
+
+### Bevacizumab (Soluble Target)
+```{r, warning=FALSE}
+param.as.double = read.param.file("../data/ModelF_Bevacizumab_Params.xlsx")
+p.beva         = as.data.frame(t(param.as.double))
+
+out = simulation(model=model, param.as.double=param.as.double, 
+      dose.nmol=max(dose.nmol.range), tmax=tmax, tau=tau) %>%
+  select(time,D1,D3,S1,DS1,S3,DS3,Sfree.pct) %>%
+  gather(cmt,value,-c(time))
+
+g = ggplot(out,aes(x=time,y=value,group=cmt,color=cmt))
+g = g + geom_line()
+g = g + scale.y.log10()
+g = g + facet_wrap(~cmt, scales="free_y")
+g = xscale("w27",increment = 3)
+print(g)
+
+param.to.change = "dose"
+param.to.change.range = dose.nmol.range
+dose.nmol = median(dose.nmol.range)
+soluble = TRUE
+
+df_compare = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = param.to.change,
+                               param.to.change.range = param.to.change.range,
+                               soluble = soluble)
+
+d.long = df_compare %>%
+  select(type,dose=param.to.change,Tacc.tum,B,Cavg1,Cavg3,Cmin,AFIRT,TFIRT) %>%
+  gather(key=param,value,-c(type,dose))
+
+g = ggplot(data=d.long,aes(x=dose,y=value,color=type,linetype=type))
+g = g + geom_line()
+g = g + scale.y.log10()
+g = g + scale.x.log10()
+g = g + facet_wrap(~param,scales = "free_y")
+print(g)
+```
+
+### Bevacizumab - try setting params to zero to see if it helps
+If k13DS is set to zero, the results are more accurate.
+
+```{r, warnings=FALSE}
+#param.as.double["kshedDM3"] = 0
+param.as.double["k13DS"] = 0
+
+df_compare = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = param.to.change,
+                               param.to.change.range = param.to.change.range,
+                               soluble = soluble)
+
+d.long = df_compare %>%
+  select(type,dose=param.to.change,Tacc.tum,B,Cavg1,Cavg3,Cmin,AFIRT,TFIRT) %>%
+  gather(key=param,value,-c(type,dose))
+
+g = ggplot(data=d.long,aes(x=dose,y=value,color=type,linetype=type))
+g = g + geom_line()
+g = g + scale.y.log10()
+g = g + scale.x.log10()
+g = g + facet_wrap(~param,scales = "free_y")
+print(g)
+```

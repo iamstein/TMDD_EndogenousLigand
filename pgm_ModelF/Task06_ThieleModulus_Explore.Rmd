@@ -1,0 +1,44 @@
+---
+title: "Calculate Thiele Modulus"
+author: "Andy Stein"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r, warning=FALSE}
+suppressMessages(source("ams_initialize_script.R"))
+```
+
+## Load the data
+```{r}
+
+#function for reading the parameter file
+read.param.file.full = function(filename) {
+  d = read_excel(filename, 1)
+  p        = as.numeric(d$Value)
+  names(p) = d$Parameter
+  return(p)
+}
+
+#read in a parameter
+  drugs = c("Herceptin","Atezolizumab","Pembrolizumab")
+  P = list()
+  for (i in 1:length(drugs)) {
+    drugi = drugs[i]
+    p = read.param.file.full(paste0("../data/ModelF_",drugi,"_Params.xlsx"))
+    P[[i]] = p
+  }
+  P = bind_rows(P)
+  P$drug = drugs
+  P = select(P,drug,everything())
+  
+#compute the Thiele modulus
+  Thiele = 
+
+
+```
+

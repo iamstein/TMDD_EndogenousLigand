@@ -1,0 +1,35 @@
+---
+title: "CompareEigenvalues"
+output: html_document
+---
+
+
+```{r}
+source("CheckFunctions.R")
+```
+
+For Herceptin
+```{r}
+param.as.double = read.param.file("../data/ModelF_Herceptin_Params.xlsx")
+# make sure keD3 is 0
+print(param.as.double["keD3"])
+
+compare_eigenvalues(param.as.double=param.as.double)
+```
+
+For Atezo
+```{r}
+param.as.double = read.param.file("../data/ModelF_Atezolizumab_Params.xlsx")
+print(param.as.double["keD3"])
+
+compare_eigenvalues(param.as.double = param.as.double)
+``` 
+
+For Pembrolizumab
+```{r}
+param.as.double = read.param.file("../data/ModelF_Pembrolizumab_Params.xlsx")
+print(param.as.double["keD3"])
+
+compare_eigenvalues(param.as.double = param.as.double)
+```
+

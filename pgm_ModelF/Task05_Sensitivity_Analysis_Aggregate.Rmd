@@ -1,0 +1,380 @@
+---
+title: "Task05_Sensitivity_Analysis_pt2"
+author: "Miandra Ellis"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   html_document:
+     toc: true
+     toc_float: true
+     code_folding: hide
+---
+
+# Preliminary stuff
+
+```{r, warning=FALSE}
+# Need this to get rxode working. I don't know why I keep having to run this.
+Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/RBuildTools/3.4/bin/",
+            "C:/RBuildTools/3.4/mingw_64/bin", sep = ";"))
+Sys.setenv(BINPREF = "C:/RBuildTools/3.4/mingw_64/bin/")
+
+# To be called at the top of every Rmd file. Initialization code and some useful constants.
+suppressMessages(source("ams_initialize_script.R"))
+```
+
+# Create data frame for multiple drugs and parameters.
+
+```{r, include=FALSE}
+
+# Note: Insoluble and soluble drugs are treated differently. 
+# For insoluble, Tacc = M3totss/M30. For soluble, Tacc = S3totss/S30. 
+# We are also interested in different parameters in the SA for either case.
+# See writeup for details.
+
+# --------------------------------------------------------------------------------
+# Initialize.
+# --------------------------------------------------------------------------------
+
+# Load model.
+model = ivsc_4cmtct_shedct(target = TRUE)
+# Drugs to explore. 
+drugs = c("Atezolizumab", "Trastuzumab", "Pembrolizumab", "Bevacizumab")
+# List of parameters of interest.
+parameters = c("dose", "ksynM3", "k13D","k13DM", "kshedDM3")
+# names(parameters) = parameters
+# Create vector of soluble drugs.
+soluble = "Bevacizumab"
+
+# Create paths to data files for each drug.
+paths = NULL
+for (i in 1:length(drugs)) {
+  paths[i] = paste0("../data/ModelF_", drugs[i],"_Params.xlsx")
+}
+
+# Dose time, frequency, compartment, nominal dose
+tmax = 26*7 #days
+tau  = 21   #days
+compartment = 2
+dose.nmol = scale.mpk2nmol
+joined = NULL
+isSoluble = FALSE
+
+# --------------------------------------------------------------------------------
+# Iterate over all the drugs.
+# --------------------------------------------------------------------------------
+
+for (i in 1:length(drugs)){
+  # Load parameters.
+  param.as.double =  read.param.file(paths[i])
+  df_param =  as.data.frame(t(param.as.double))
+  
+  # Check if drug has soluble target.
+  if (drugs[i] %in% soluble) {
+    # Change any non-shed parameters including M to S.
+    parameters = sapply(parameters, 
+                        function(x) {
+                          if (!grepl("shed|dose",x)) {return(gsub("M","S", x))}
+                          return(x)
+                        })
+    isSoluble = TRUE
+  }
+
+  # Set range for parameters of interest in SA.
+  # Check which parameters are nonzero, not including dose which isn't in df_param.
+  nnzero = df_param[parameters[which(parameters != "dose")]] != 0
+  nnzero = colnames(nnzero)[which(nnzero)]
+  params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.01, x*10, 13)))
+  
+  dfs = list()
+  # Iterate all of the parameters for a single drug.
+  for (j in 1:ncol(params.to.iterate)){
+    dfs[[j]] = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = names(params.to.iterate)[j],
+                               param.to.change.range = params.to.iterate[[j]],
+                               soluble = isSoluble)
+    dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs[i], isSol = isSoluble)
+  }
+  joined = bind_rows(joined,dfs)
+  
+  # Reset isSoluble to false since the default in compare.thy.sim is false.
+  isSoluble = FALSE
+}
+
+joined = joined %>%
+  mutate(drug = factor(drug,levels=c("Bevacizumab","Pembrolizumab","Atezolizumab", "Trastuzumab")))
+```
+
+# Plot the output variable of interest
+
+```{r}
+# I only wanted a subset of the parameters for gather.
+joined.A.Kssd = joined[c("fold.change.param", "AFIRT.Kssd_", "AFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+joined.T.Kssd = joined[c("fold.change.param", "TFIRT.Kssd_", "TFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+
+joined.A.Kss = joined[c("fold.change.param", "AFIRT.Kss_", "AFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+joined.T.Kss = joined[c("fold.change.param", "TFIRT.Kss_", "TFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+
+joined.A.Kd = joined[c("fold.change.param", "AFIRT.Kd_", "AFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+joined.T.Kd = joined[c("fold.change.param", "TFIRT.Kd_", "TFIRT.sim", "param", "drug", "isSol", "M30", "S30")]
+
+# Use gather to make the long data frame for ggplot. Group by isSoluble to create to separate plots.
+plots.A.Kssd = joined.A.Kssd %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+plots.T.Kssd = joined.T.Kssd %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+
+plots.A.Kss = joined.A.Kss %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+plots.T.Kss = joined.T.Kss %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+
+plots.A.Kd = joined.A.Kd %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+plots.T.Kd = joined.T.Kd %>% gather(key, Value, -param, -fold.change.param, -drug, -isSol, -M30, -S30) %>%
+  filter(!is.na(Value)) %>%
+  group_by(isSol)
+
+#Rename for plotting - map M->T and S->T (for target)
+plots.A.Kssd = plots.A.Kssd %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"AFIRT\\.",""),
+         key    = str_replace(key,"Kssd","Theory (AFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+plots.T.Kssd = plots.T.Kssd %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"TFIRT\\.",""),
+         key    = str_replace(key,"Kssd","Theory (TFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+
+plots.A.Kss = plots.A.Kss %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"AFIRT\\.",""),
+         key    = str_replace(key,"Kss","Theory (AFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+plots.T.Kss = plots.T.Kss %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"TFIRT\\.",""),
+         key    = str_replace(key,"Kss","Theory (TFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+
+plots.A.Kd = plots.A.Kd %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"AFIRT\\.",""),
+         key    = str_replace(key,"Kd","Theory (AFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+plots.T.Kd = plots.T.Kd %>%
+  mutate(param  = str_replace(param,"M","T"),
+         param  = str_replace(param,"S","T"),
+         key    = str_replace(key,"_",""),
+         key    = str_replace(key,"TFIRT\\.",""),
+         key    = str_replace(key,"Kd","Theory (TFTIR*)"),
+         key    = str_replace(key,"sim","Simulation"),
+         Target = ifelse(isSol,"Soluble","Membrane-Bd"),
+         Target = factor(Target,levels=c("Soluble","Membrane-Bd")))
+
+g = ggplot(plots.A.Kssd, aes(fold.change.param, Value, color=key,linetype=key))
+g = g + scale.x.log10(limits=c(.009,11))
+g = g + scale.y.log10(limits=c(.001,1))
+g = g + geom_line()
+g = g + facet_grid(drug + Target ~ param, switch = "y")
+g = g + scale_linetype_manual(values  = c("solid","longdash"))
+g = g + labs(x="Fold Change in Parameter",
+             y="Average Free Tissue target to\nInitial target Ratio (AFTIR)",
+             # color = "Estimate",
+             # linetype = "Estimate",
+             caption = "Kssd")
+g = g + theme(legend.position="bottom", 
+              text=element_text(size=15), 
+              axis.title.x=element_text(size=20), 
+              axis.title.y=element_text(size=20))
+g = g + scale_color_manual(values = c("blue","black"))
+
+width  = 10
+height = 7
+
+plot(g)
+ggsave("../results/Task05_AFTIR.Kssd.pdf",width = width,height=height)
+g = g %+% plots.T.Kssd
+g = g + labs(y="Trough Free Tissue target to\ninitial target Ratio (TFTIR)",
+             caption = "Kssd")
+plot(g)
+ggsave("../results/Task05_TFTIR.Kssd.pdf",width = width,height=height)
+
+g = g %+% plots.A.Kss
+g = g + labs(y="Average Free Tissue target to\nInitial target Ratio (AFTIR)",
+             caption = "Kss")
+plot(g)
+ggsave("../results/Task05_AFTIR.Kss.pdf",width = width,height=height)
+g = g %+% plots.T.Kss
+g = g + labs(y="Trough Free Tissue target to\ninitial target Ratio (TFTIR)",
+             caption = "Kss")
+plot(g)
+ggsave("../results/Task05_TFTIR.Kss.pdf",width = width,height=height)
+
+g = g %+% plots.A.Kd
+g = g + labs(y="Average Free Tissue target to\nInitial target Ratio (AFTIR)",
+             caption = "Kd")
+plot(g)
+ggsave("../results/Task05_AFTIR.Kd.pdf",width = width,height=height)
+g = g %+% plots.T.Kd
+g = g + labs(y="Trough Free Tissue target to\ninitial target Ratio (TFTIR)",
+             caption = "Kd")
+plot(g)
+ggsave("../results/Task05_TFTIR.Kd.pdf",width = width,height=height)
+```
+
+# Create data frame for multiple drugs and parameters.
+# This is redone for no target in order to compare Cmin.
+# The only difference is 'target = FALSE' is the input for the model.
+
+```{r, include=FALSE}
+
+# Note: Insoluble and soluble drugs are treated differently. 
+# For insoluble, Tacc = M3totss/M30. For soluble, Tacc = S3totss/S30. 
+# We are also interested in different parameters in the SA for either case.
+# See writeup for details.
+
+# --------------------------------------------------------------------------------
+# Initialize.
+# --------------------------------------------------------------------------------
+
+# Load model.
+model = ivsc_4cmtct_shedct(target = FALSE)
+# Drugs to explore. 
+drugs = c("Atezolizumab", "Trastuzumab", "Pembrolizumab", "Bevacizumab")
+# List of parameters of interest.
+parameters = c("dose", "ksynM3", "k13D", "kshedM3", "kshedDM3", "VD3")
+# names(parameters) = parameters
+# Create vector of soluble drugs.
+soluble = "Bevacizumab"
+
+# Create paths to data files for each drug.
+paths = NULL
+for (i in 1:length(drugs)) {
+  paths[i] = paste0("../data/ModelF_", drugs[i],"_Params.xlsx")
+}
+
+# Dose time, frequency, compartment, nominal dose
+tmax = 26*7 #days
+tau  = 21   #days
+compartment = 2
+dose.nmol = scale.mpk2nmol
+joined = NULL
+isSoluble = FALSE
+
+# --------------------------------------------------------------------------------
+# Iterate over all the drugs.
+# --------------------------------------------------------------------------------
+
+for (i in 1:length(drugs)){
+  # Load parameters.
+  param.as.double =  read.param.file(paths[i])
+  df_param =  as.data.frame(t(param.as.double))
+  
+  # Check if drug has soluble target.
+  if (drugs[i] %in% soluble) {
+    # Change any non-shed parameters including M to S.
+    parameters = sapply(parameters, 
+                        function(x) {
+                          if (!grepl("shed|dose",x)) {return(gsub("M","S", x))}
+                          return(x)
+                        })
+    isSoluble = TRUE
+  }
+
+  # Set range for parameters of interest in SA.
+  # Check which parameters are nonzero, not including dose which isn't in df_param.
+  nnzero = df_param[parameters[which(parameters != "dose")]] != 0
+  nnzero = colnames(nnzero)[which(nnzero)]
+  params.to.iterate = data.frame(dose = lseq(scale.mpk2nmol*.1,scale.mpk2nmol*10,7),
+                                 lapply(df_param[nnzero], function(x) lseq(x*0.01, x*100, 7)))
+  
+  dfs = list()
+  # Iterate all of the parameters for a single drug.
+  for (j in 1:ncol(params.to.iterate)){
+    dfs[[j]] = compare.thy.sim(model = model,
+                               param.as.double = param.as.double,
+                               dose.nmol = dose.nmol,
+                               tmax = tmax,
+                               tau  = tau,
+                               compartment = compartment,
+                               param.to.change = names(params.to.iterate)[j],
+                               param.to.change.range = params.to.iterate[[j]],
+                               soluble = isSoluble)
+    dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs[i], isSol = isSoluble)
+  }
+  joined = bind_rows(joined,dfs)
+  
+  # Reset isSoluble to false since the default in compare.thy.sim is false.
+  isSoluble = FALSE
+}
+```
+
+# Plot the output Cmin.
+
+```{r}
+
+# I only wanted a subset of the parameters for gather.
+joined.Cmin = joined[c("fold.change.param","Cmin.thy", "Cmin.sim", "param","drug", "isSol")]
+
+# Use gather to make the long data frame for ggplot.
+plots.Cmin = joined.Cmin %>% gather(key, Cmin.value, -param, -fold.change.param, -drug, -isSol) %>%
+  filter(!is.na(Cmin.value)) %>%
+  # Group by isSoluble to create to separate plots.
+  group_by(isSol)%>%
+  do(plot = ggplot(., aes(fold.change.param, Cmin.value, color=key,linetype=key)) +
+      scale.x.log10() +
+      scale.y.log10() +
+      geom_line() +
+      geom_point() + 
+      facet_grid(drug ~ param))
+plots.Cmin$plot
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

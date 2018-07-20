@@ -1,0 +1,105 @@
+---
+title: "Task13_Example_Individual_Run_Plot.R"
+author: "Andy Stein"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+# Preliminary stuff
+
+```{r, warning=FALSE}
+# Sameed need this to get rxode working. I don't know why I keep having to run this.
+Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/RBuildTools/3.4/bin/",
+            "C:/RBuildTools/3.4/mingw_64/bin", sep = ";"))
+Sys.setenv(BINPREF = "C:/RBuildTools/3.4/mingw_64/bin/")
+
+# To be called at the top of every Rmd file. Initialization code and some useful constants.
+suppressMessages(source("ams_initialize_script_v3.R"))
+```
+
+# Individual simulation examlpe with rxode
+
+```{r}
+# Load model and parameters.
+model           = ivsc_4cmtct_shedct()
+drugs           = c("Pembrolizumab")
+filename        = paste0("../data/ModelF_", drugs,"_Params.xlsx")
+param.as.double = read.param.file(filename)
+df_param        = as.data.frame(t(param.as.double))
+
+#Set dosing parameters
+dose.nmol       = scale.mpk2nmol #1 mg/kg (mpk)
+tmax            = 26*7 #days (maximum time point)
+tau             = 21   #days between doses
+compartment     = 2    #compartment drug is dosed into
+
+#set sampling and dosing event (ev) table
+ev = eventTable(amount.units="nmol", time.units="days")
+sample.points = c(seq(-7, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
+sample.points = sort(sample.points)
+sample.points = unique(sample.points)
+ev$add.sampling(sample.points)
+ev$add.dosing(dose            = dose.nmol, 
+              nbr.doses       = floor(tmax/tau)+1, 
+              dosing.interval = tau,
+              dosing.to       = compartment)
+
+#set the initial condition
+init = model$init(param.as.double)
+    
+#run the model
+out  = model$rxode$solve(param.as.double, ev, init)
+out  = model$rxout(out)
+out  = out %>%
+        mutate(Sfree.pct = S3/init["S3"],
+               Mfree.pct = M3/init["M3"],
+               dose.nmol = dose.nmol)
+
+
+#modify output dataframe for plotting
+out.plot = out %>%
+    select(time,D1,D3,M3,DM3,Mfree.pct) %>%
+    gather(cmt,value,-c(time))
+  
+#plot the results
+  g = ggplot(out.plot,aes(x=time,y=value,group=cmt,color=cmt))
+  g = g + geom_line()
+  g = g + scale.y.log10()
+  g = g + scale_x_units(units.input = "day",units.output = "month",increment = 1,t.end = tmax/30)
+  print(g)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
