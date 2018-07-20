@@ -6,8 +6,8 @@
   source("../../pgm_ModelG/xgx_packages_functions.R")
 
 #molecular weights  
-  MW_IL6   = 25;  #kDa
-  MW_sIL6R = 80;  #kDa
+  MW_IL6   = 21;  #kDa
+  MW_sIL6R = 52;  #kDa
   MW_toci  = 148; #kDa
   MW_silt  = 145; #kDa    
   MW_CRP   = 25.1 #kDa
