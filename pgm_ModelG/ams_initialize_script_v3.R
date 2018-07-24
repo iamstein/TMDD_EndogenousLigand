@@ -33,8 +33,15 @@ library(RxODE)
 
 #source additional key functions
 source("xgx_packages_functions.R")
-source("../pgm_ModelF/AFIRT_calculation.R")
-source("../pgm_ModelF/ivsc_4cmtct_shedct.R")
+
+#helper fuction for reading parameter files
+#it assumes model has been defined above and only model$pin params are kept in the vector
+read.param.file = function(filename) {
+  d                      = read_excel(filename, 1)
+  param.as.double        = suppressWarnings(as.numeric(d$Value))
+  names(param.as.double) = d$Parameter
+  param.as.double        = param.as.double[model$pin] #keep only parameters used in ODE
+}
 
 #flag for labeling figures as draft
 draft.flag      = TRUE

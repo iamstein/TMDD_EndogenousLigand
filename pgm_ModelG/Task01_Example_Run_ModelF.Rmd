@@ -1,5 +1,5 @@
 ---
-title: "Task13_Example_Individual_Run_Plot.R"
+title: "Task01_Example_Run_ModelF.Rmd"
 author: "Andy Stein"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -25,6 +25,8 @@ suppressMessages(source("ams_initialize_script_v3.R"))
 
 ```{r}
 # Load model and parameters.
+source("../pgm_ModelF/AFIRT_calculation.R")
+source("../pgm_ModelF/ivsc_4cmtct_shedct.R")
 model           = ivsc_4cmtct_shedct()
 drugs           = c("Pembrolizumab")
 filename        = paste0("../data/ModelF_", drugs,"_Params.xlsx")

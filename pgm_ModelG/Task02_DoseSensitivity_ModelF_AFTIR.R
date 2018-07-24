@@ -15,6 +15,8 @@ source("ams_initialize_script_v3.R")
 # Initialize ----
 
 # Load model.
+source("../pgm_ModelF/AFIRT_calculation.R")
+source("../pgm_ModelF/ivsc_4cmtct_shedct.R")
 model = ivsc_4cmtct_shedct(target = TRUE)
 # Drugs to explore. 
 drugs = c("Atezolizumab", "Trastuzumab", "Pembrolizumab", "Bevacizumab")
