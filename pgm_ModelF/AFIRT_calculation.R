@@ -276,35 +276,6 @@ lumped.parameters.simulation = function(model           = model,
     return(lumped_parameters_sim)
 }
 
-# Runs simulation -----------------------------------------------------
-
-
-simulation = function(model           = model, 
-                      param.as.double = param.as.double,
-                      dose.nmol       = dose.nmol, 
-                      tmax            = tmax, 
-                      tau             = tau){
-  #d <- xlsx::read.xlsx(params_file_path, 1)
-  #param.as.double = d$Value
-  #names(param.as.double) = d$Parameter
-  ev = eventTable(amount.units="nmol", time.units="days")
-  sample.points = c(seq(-7, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
-  sample.points = sort(sample.points)
-  sample.points = unique(sample.points)
-  ev$add.sampling(sample.points)
-  ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau,
-                dosing.to=2)
-
-  init = model$init(param.as.double)
-  out  = model$rxode$solve(param.as.double, ev, init)
-  out  = model$rxout(out)
-  out  = out %>%
-    mutate(Sfree.pct = S1/init["S1"],
-           Mfree.pct = M3/init["M3"],
-           dose.nmol = dose.nmol)
-  return(out)
-}
-
 # Compare Theory to Simulation for sensitivity analysis ----------------------------------------------------------------------------------
 #  on the user inputted parameter 
 
@@ -342,17 +313,14 @@ compare.thy.sim = function(model                 = model,
   df_sim = data.frame()
   
   # Iterate through values in range.
-  if (param.to.change == 'dose'){
-    for (param.iter in param.to.change.range){
-      row = lumped.parameters.simulation(model, param.as.double, param.iter, tmax, tau, compartment, soluble)
-      df_sim = rbind(df_sim, row)
-    }  
-  } else {
-    for (param.iter in param.to.change.range){
+  for (param.iter in param.to.change.range){
+    if (param.to.change == 'dose'){
+      dose.nmol = param.iter
+    } else {
       param.as.double[param.to.change] = param.iter
-      row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, soluble)
-      df_sim = rbind(df_sim, row)
     }
+    row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, soluble)
+    df_sim = rbind(df_sim, row)
   }
   
   if (param.to.change == 'dose'){
@@ -362,33 +330,20 @@ compare.thy.sim = function(model                 = model,
     df_sim = df_sim %>% mutate(param.to.change = param.to.change.range,
                                fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
   }
-  
-  # Add fold change column for variables of interest.
-  if (param.to.change == 'dose'){
-    baseline.index = which(round(df_sim$param.to.change, digits=4) == round(as.numeric(dose.nmol), digits=4))
-  } else {
-    baseline.index = which(round(df_sim$param.to.change, digits=4) == round(as.numeric(param.as.double.original[param.to.change.original]), digits=4))
-  }
 
-  df_sim = df_sim %>% mutate(fold.change.AFIRT.sim = AFIRT.sim/AFIRT.sim[baseline.index])
-  df_sim = df_sim %>% mutate(fold.change.Tacc.tum  = Tacc.tum /Tacc.tum [baseline.index])
-  
   # Theory
   
   df_thy = data.frame()
   
   # Iterate through values in range.
-  if (param.to.change == 'dose'){
-    for (param.iter in param.to.change.range){
-      row = lumped.parameters.theory(param.as.double, param.iter, tau, soluble)
-      df_thy = rbind(df_thy, row)
-    }
-  } else{
-    for (param.iter in param.to.change.range){
+  for (param.iter in param.to.change.range){
+    if(param.to.change == 'dose'){
+      dose.nmol = param.iter 
+    } else {
       param.as.double[param.to.change] = param.iter
-      row = lumped.parameters.theory(param.as.double, dose.nmol, tau, soluble)
-      df_thy = rbind(df_thy, row)
     }
+    row = lumped.parameters.theory(param.as.double, dose.nmol, tau, soluble)
+    df_thy = rbind(df_thy, row)
   }
   
   if (param.to.change == 'dose'){
@@ -399,21 +354,7 @@ compare.thy.sim = function(model                 = model,
                                fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
   }
   
-  # Add fold change column for variables of interest.
-  if (param.to.change == 'dose'){
-    baseline.index = which(round(df_thy$param.to.change, digits=4) == round(as.numeric(dose.nmol), digits=4))
-  } else {
-    baseline.index = which(round(df_thy$param.to.change, digits=4) == round(as.numeric(param.as.double.original[param.to.change.original]), digits=4))
-  }
-
-  df_thy = df_thy %>% mutate(fold.change.AFIRT.Kssd = AFIRT.Kssd/AFIRT.Kssd[baseline.index])
-  df_thy = df_thy %>% mutate(fold.change.AFIRT.Kss  = AFIRT.Kss /AFIRT.Kss [baseline.index])
-  df_thy = df_thy %>% mutate(fold.change.AFIRT.Kd   = AFIRT.Kd  /AFIRT.Kd  [baseline.index])
-  df_thy = df_thy %>% mutate(fold.change.Tacc.tum   = Tacc.tum  /Tacc.tum  [baseline.index])
-  
   # Arrange theory and simulation in single data frame.
-  
-  # I am tired of that "Unequal factor levels" error. This fixes it.
   df_compare = bind_rows(df_thy,df_sim)
   param      = param.to.change
   df_compare = df_compare %>%

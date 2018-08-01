@@ -9,12 +9,9 @@ output:
     code_folding: hide
 ---
 
-# Preliminary stuff
-
 ```{r, warning=FALSE}
-# Sameed need this to get rxode working. I don't know why I keep having to run this.
-Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/RBuildTools/3.4/bin/",
-            "C:/RBuildTools/3.4/mingw_64/bin", sep = ";"))
+# This code may be needed if run on Windows
+Sys.setenv(PATH = paste(Sys.getenv("PATH"), "C:/RBuildTools/3.4/bin/", "C:/RBuildTools/3.4/mingw_64/bin", sep = ";"))
 Sys.setenv(BINPREF = "C:/RBuildTools/3.4/mingw_64/bin/")
 
 # To be called at the top of every Rmd file. Initialization code and some useful constants.
@@ -22,16 +19,18 @@ suppressMessages(source("ams_initialize_script_v3.R"))
 ```
 
 #The model of a drug, target, and endogenous ligand - Model G (DTL)
-The model below is simulated.
+Consider the model below where a drug ($D$) binds its target ($T$) to form a complex ($DT$) and the target also binds an endogenous ligand ($L$) to form a signaling complex ($TL$).  This is the case where a target ($T$) binds two different ligands and it has been considered in the following references, albeit with different notation.
+
+* Peletier, Lambertus A., and Johan Gabrielsson. "New Equilibrium Models of Drug-Receptor Interactions Derived from Target-Mediated Drug Disposition." The AAPS journal 20.4 (2018): 69.
+
+* Motulsky, Harvey J., and L. C. Mahan. "The kinetics of competitive radioligand binding predicted by the law of mass action." Molecular pharmacology 25.1 (1984): 1-9.
 
 ![Drug, target, and endogenous ligand kinetics](../doc/Figures/DTL_Model.png)
 The equations for the model are:
 ![Model Equations](../doc/Figures/DTL_Equations.png)
 
+The model parameters used for some initial simulations, based loosely on Tocilizumab (drug), soluble IL-6R (target) and IL-6 (ligand) kinetics.  The parameters are provided below.
 
-
-
-# Individual simulation examlpe with rxode and multiple doses
 ```{r, warning=FALSE}
 # Load model and parameters.
 source("ivsc_2cmt_DTL.R")
@@ -40,6 +39,11 @@ drugs           = "Tocilizumab"
 filename        = paste0("../data/ModelG_", drugs,"_Params.xlsx")
 param = read.param.file(filename)
 df_param        = as.data.frame(t(param))
+
+d = read_excel(filename) %>%
+  select(-Order) %>%
+  mutate(Value = signif(Value,2))
+kable(d)
 
 #Set dosing parameters
 dose.nmol       = scale.mpk2nmol #1 mg/kg (mpk)
@@ -67,7 +71,8 @@ out  = model$rxout(out)
 
 #modify output dataframe for plotting
 out.plot = out %>%
-    gather(cmt,value,-c(time))
+  select(-Ttot,-Ltot) %>%
+  gather(cmt,value,-c(time))
   
 #plot the results
   g = ggplot(out.plot,aes(x=time,y=value,group=cmt,color=cmt))
@@ -78,9 +83,13 @@ out.plot = out %>%
   
 ```
 
-#Individual Simulation, single dose, overlay data - Model G (DTL)
+#Simulation of a single dose, overlaying data from Tocilizumab - Model G (DTL)
 
-I'm choosing somewhat unealistic elimination rates for IL-6 (keL, keDL) here, just to get a good match.  So for instance, I'm using keL = 1/day instead of 40/day.  We would need to think about this system some more.
+Below, data is taken from the following reference
+
+* Jean-Eric Charoin, Micha Levi, Nicolas Frey, Isabelle Delor, and Philippe Jacqmin. Target mediated drug disposition (tmdd) in rheumatoid arthritis, a case study using tocilizumab. Presenetd at the 6th International Symposium on Measurement and Kinetics of in Vivo Drug Effects in Noordwijkerhout, The Netherlands, 2010.
+
+The parameters used are in the table above.
 
 ```{r, warning=FALSE, message=FALSE}
 d = read_csv("../data/Charoin10_RA_1pt/Task01_Charoin10_Data_1pat.csv") %>%
@@ -145,6 +154,11 @@ drugs           = "Tocilizumab"
 filename        = paste0("../data/ModelH_", drugs,"_Params.xlsx")
 param = read.param.file(filename)
 d.param        = as.data.frame(t(param))
+
+d = read_excel(filename) %>%
+  select(-Order) %>%
+  mutate(Value = signif(Value,2))
+kable(d)
 
 init = model$init(param)
     
