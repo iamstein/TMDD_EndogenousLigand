@@ -51,8 +51,8 @@ print.filenames.flag = TRUE
 top = paste0(normalizePath("../"),"/")
 dirs= list(top.level         = top,
            Rscript.relative  = "./",
-           results.relative  = "../SCIM_ModelG_results/",
-           results.relative.print = "SCIM_ModelG_results/")
+           results.relative  = "./results/",
+           results.relative.print = "./results/")
 
 #ggplot settings
 theme_set(theme_bw())

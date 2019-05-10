@@ -18,8 +18,8 @@ i = 1 #ADD THIS LINE
 #Get params for all the drugs
 for (drugs in drugs_list) { #ADD THIS LOOP
   
-  filename        = list.files(pattern = drugs) #change filename line to this
-  param[[i]] = (filename)
+  filename        = list.files("parameters/",pattern = drugs) #change filename line to this
+  param[[i]] = paste0("parameters/",filename)
   i = i+1
 }
 
