@@ -98,11 +98,11 @@ param.tablet = param.table %>%
 write.csv(all_params, file = "task04.csv")
 
 data.plot <- all_params %>%
-  select(fold.change.param, 
-         TL0.sim,
-         TL0.thy,
-         TL0_neg.thy,
-         TL0_pos.thy,
+  dplyr::select(fold.change.param, 
+         TL0_sim,
+         TL0_keTL0_thy,
+         TL0_negroot_thy,
+         TL0_posroot_thy,
          drug, param) %>%
   gather(key, value, -c(fold.change.param,drug,param))
 
@@ -110,12 +110,12 @@ g <- ggplot(data.plot, aes(x=fold.change.param, y=value, color=key, linetype=key
   facet_grid(drug ~ param, scales = "free_y", switch = "y") + 
   geom_line(size=1, alpha=0.6) +
   scale_x_log10() + 
-  scale_y_log10() +
-  scale_color_manual(values = c(#SCIM_thy_ketl_pos="orange",
-    TL0.sim="black",
-    TL0.thy="red",
-    TL0_neg.thy="green",
-    TL0_pos.thy="blue"))
+  scale_y_log10()
+  #scale_color_manual(values = c(#SCIM_thy_ketl_pos="orange",
+  #  TL0.sim="black",
+  #  TL0.thy="red",
+  #  TL0_neg.thy="green",
+  #  TL0_pos.thy="blue"))
 print(g)
 
 
@@ -134,7 +134,7 @@ out  = model$rxode$solve(param.as.double, ev, init)
 out  = model$rxout(out)
 
 out.long = out %>%
-  select(time,T,L,TL) %>%
+  dplyr::select(time,T,L,TL) %>%
   gather(key,value,-c(time))
   
 pars = as.data.frame(t(param.as.double))

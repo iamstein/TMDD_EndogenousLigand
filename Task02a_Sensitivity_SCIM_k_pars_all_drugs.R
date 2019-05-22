@@ -98,8 +98,7 @@ param.tablet = param.table %>%
 write.csv(all_params, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
-#  select(fold.change.param,AFIR_thy,SCIM_thy_ketl_neg,SCIM.sim,SCIM.thy,drug,param) %>%
-  dplyr::select(fold.change.param,SCIM.sim,SCIM_thy_ketl_neg,drug,param) %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
 g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
@@ -107,13 +106,13 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
   facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
   scale_x_log10() + 
   scale_y_log10() + 
-  scale_color_manual(values = c(SCIM.sim = "black",
-                                SCIM.thy = "blue",
-                                SCIM_thy_ketl_neg = "green",
+  scale_color_manual(values = c(SCIM_sim       = "black",
+                                SCIM_thy_keTL0 = "blue",
+                                SCIM_thy_keTL_negroot = "green",
                                 AFIR_thy = "red")) + 
-  scale_linetype_manual(values = c(SCIM.sim = "solid",
-                                   SCIM.thy = "dotted",
-                                   SCIM_thy_ketl_neg = "dashed",
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL0 = "dotted",
+                                   SCIM_thy_keTL_negroot = "dashed",
                                    AFIR_thy = "solid"))
 
 print(g)
