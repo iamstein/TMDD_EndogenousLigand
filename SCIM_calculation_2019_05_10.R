@@ -33,16 +33,15 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #   A data frame of lumped parameters calculated from theory
   
   pars    = as.data.frame(t(param.as.double))
-  CL = with(pars, (keD*V1))
+  #CL = with(pars, (keD*V1))
   #TL0 = with(pars, ksynT*ksynL/(koff_TL/kon_TL*keT*(keL+kon_TL) - ksynT*koff_TL))
-  T0 = with(pars, ksynT/keT)
-  TL0 = with(pars, ksynL*T0/(koff_TL/kon_TL*keL))
-  Tacc = with(pars, ksynT/(keDT*TL0))
-  Lss = with(pars, ksynL/keL)
-  Ttot_high = with(pars,ksynT/keDT)
-  Ttot = Tacc*TL0
-  KssTL = with(pars,koff_TL/kon_TL)
-  KssDT = with(pars,koff_DT/kon_DT)
+  T0  = with(pars, ksynT/keT)
+  TL0_keDT0 = with(pars, ksynL*T0/(koff_TL/kon_TL*keL))
+  #Tacc = with(pars,keT  /keDT)
+  Lss  = with(pars,ksynL/keL)
+  Ttot = with(pars,ksynT/keDT)
+  KssTL = with(pars,(koff_TL+keTL)/kon_TL)
+  KssDT = with(pars,(koff_DT+keDT)/kon_DT)
   
   
   
@@ -50,9 +49,9 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   alpha= with(pars, .5*(k12+k21+keD + sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   beta = with(pars, .5*(k12+k21+keD - sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   A    = with(pars, dose*(k21-alpha)/(V1*(beta-alpha)))
-  Ap   = with(pars, dose* k12       /(V1*(beta-alpha))) #peripheral 1
+  #Ap   = with(pars, dose* k12       /(V1*(beta-alpha))) #peripheral 1
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
-  Bp   = with(pars, dose* k12       /(V1*(alpha-beta))) #peripheral 2
+  #Bp   = with(pars, dose* k12       /(V1*(alpha-beta))) #peripheral 2
   
   #t_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
   #C_vec = dose.nmol*(A*exp(-alpha*t_vec)/(1-exp(-alpha*tau)) + B*exp(-beta*t_vec)/(1-exp(-beta*tau)))
@@ -62,13 +61,13 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   
   #AFIR_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*koff_DT/kon_DT) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
-  SCIM_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
+  SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keDT0)))
   AFIR_thy = with(pars,(KssDT*(Ttot/T0))/Dss)
   
   
   #For KeTL ~= 0
   a = with(pars,keTL^2)
-  b = with(pars,-(keTL) * (ksynT +ksynL) - ((koff_TL/kon_TL) * keT *keL))
+  b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
   c =with(pars, ksynL*ksynT)
   
   TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a)
@@ -80,17 +79,16 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   SCIM_thy_ketl_neg = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_neg))
 
   lumped_parameters_theory = data.frame(
-    TL0.thy = TL0,
-    TL0_neg.thy = TL0_neg,
-    TL0_pos.thy = TL0_pos,
-    T0.thy = T0,
-    Ttot.thy = Ttot,
-    Ttot_high.thy = Ttot_high,
-    Lss.thy = Lss,
-    Dss.thy = Dss,
-    SCIM.thy = SCIM_thy,
-    SCIM_thy_ketl_neg = SCIM_thy_ketl_neg,
-    SCIM_thy_ketl_pos = SCIM_thy_ketl_pos,
+    TL0_keTL0_thy = TL0_keDT0,
+    TL0_negroot_thy = TL0_neg,
+    TL0_posroot_thy = TL0_pos,
+    T0_thy = T0,
+    Ttot_thy = Ttot,
+    Lss_thy = Lss,
+    Dss_thy = Dss,
+    SCIM_thy_keTL0        = SCIM_thy_keTL0,
+    SCIM_thy_keTL_negroot = SCIM_thy_ketl_neg,
+    SCIM_thy_keTL_posroot = SCIM_thy_ketl_pos,
     AFIR_thy = AFIR_thy,
     stringsAsFactors = FALSE
   )
@@ -154,12 +152,12 @@ lumped.parameters.simulation = function(model           = model,
   D_sim = out$D[which(round(10*out$time) == round(10*time_idx))]
   
   lumped_parameters_sim = data.frame(
-    TL0.sim = TL0,
-    T0.sim = T0,
-    Ttot.sim = Ttot_sim,
-    L.sim = L_sim,
-    D.sim = D_sim,
-    SCIM.sim = SCIM_sim,
+    TL0_sim = TL0,
+    T0_sim = T0,
+    Ttot_sim = Ttot_sim,
+    L_sim = L_sim,
+    D_sim = D_sim,
+    SCIM_sim = SCIM_sim,
     time_idx,
     TLss,
     stringsAsFactors = FALSE) #having one named sim will be helpful later on in Task01, Task02, etc.
