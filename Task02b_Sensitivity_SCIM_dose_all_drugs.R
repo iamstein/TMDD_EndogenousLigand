@@ -83,8 +83,8 @@ g <- ggplot(data.plot, aes(x=param.to.change/dose.nmol,y=value,color=key,linetyp
                                    SCIM_thy_keTL0 = "dotted",
                                    SCIM_thy_keTL_negroot = "dashed",
                                    AFIR_thy = "solid")) + 
-  theme(legend.position="top")  + 
-  ggtitle(paste0("Dose = ", dose.nmol*scale.nmol2mpk, "mg/kg every ", tau/7, "weeks"))
+  theme(legend.position="top") +
+  xlab("Dose (mg/kg) every three weeks")
 
 g = xgx_save(6,6,dirs,"DoseSensitivityAnalysis",draft.flag)
 print(g)
