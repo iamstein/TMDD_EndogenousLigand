@@ -54,7 +54,7 @@ read.param.file = function(filename) {
 }
 
 #flag for labeling figures as draft
-draft.flag           = "DRAFT"
+draft.flag           = ""
 
 #set directories
 top = paste0(normalizePath("../"),"/")

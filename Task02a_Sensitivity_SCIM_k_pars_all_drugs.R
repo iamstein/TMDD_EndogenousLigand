@@ -33,7 +33,8 @@ parameters = c("ksynT", "keDT","koff_TL", "kon_TL", "koff_DT","kon_DT")
 tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
-dose.nmol = 5*scale.mpk2nmol
+dose.mpk  = 100
+dose.nmol = dose.mpk*scale.mpk2nmol
 isSoluble = FALSE
 
 param.list = list()
@@ -115,7 +116,8 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
                                    SCIM_thy_keTL_negroot = "dashed",
                                    AFIR_thy = "solid")) + 
   theme(legend.position="top") + 
-  ggtitle(paste0("Dose = ", dose.nmol*scale.nmol2mpk, "mg/kg every ", tau/7, "weeks"))
+  ggtitle(paste0("Dose = ", dose.mpk, "mg/kg every ", tau/7, "weeks")) +
+  xlab("Fold Change in Parameter")
 
-g = xgx_save(8,8,dirs,"ManySensitivityAnalysis",draft.flag)
+g = xgx_save(8,8,dirs,paste0("ManySensitivityAnalysis_",dose.mpk,"mpk"),draft.flag)
 print(g)
