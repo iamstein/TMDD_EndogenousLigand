@@ -1,8 +1,8 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$Rscript.name = "Task02b_Sensitivity_SCIM_dose.R"
-dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
+dirs$rscript_name = "Task02b_Sensitivity_SCIM_dose_all_drugs.R"
+dirs$filename_prefix =  str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_v1(target = TRUE)
 parameters = c("dose")
@@ -27,7 +27,7 @@ for (drugs in drugs_list) { #ADD THIS LOOP
 tmax = 364 #days
 tau  = 21   #days
 compartment = 2
-dose.nmol = 10*scale.mpk2nmol
+dose.nmol = 1*scale.mpk2nmol
 isSoluble = FALSE
 
 # --------------------------------------------------------------------------------
@@ -44,7 +44,8 @@ df_param =  as.data.frame(t(param.as.double))
 # Set range for parameters of interest in SA.
 # Check which parameters are nonzero, not including dose which isn't in df_param.
 
-params.to.iterate = data.frame(dose = lseq(scale.mpk2nmol*0.1,scale.mpk2nmol*100,100))
+param.as.double["dose"] = dose.nmol
+params.to.iterate = data.frame(dose = dose.nmol*lseq(0.01,1000,21))
 
 # iterate over doses
   dfs = compare.thy.sim(model           = model,
@@ -64,29 +65,28 @@ params.to.iterate = data.frame(dose = lseq(scale.mpk2nmol*0.1,scale.mpk2nmol*100
   }
 write.csv(all_params, "Task02b_sens_SCIM_dose_all_drugs.csv")
 
-# modify dfs for plotting to compare theory to simulation
-  d.plot = dfs %>%
-    gather(metric_full,value,-c(param.to.change,fold.change.param,time_idx,param.to.change1,fold.change.param1,param)) %>%
-    mutate(type      = str_replace(metric_full,"^.*\\.",""),
-           metric    = str_replace(metric_full,"\\..*$",""))
+# plot results ----
+data.plot = all_params %>%
+  dplyr::select(param.to.change, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
+  gather(key,value,-c(param.to.change,drug,param))
 
-#plot theory vs simulation
-  g = ggplot(d.plot,aes(x=param.to.change,y=value,color=type,linetype=type))
-  g = g + geom_line()
-  g = g + facet_wrap(~metric)
-  g = g + scale.x.log10()
-  g = g + scale.y.log10()
-  g = g + labs(x="Dose",
-               y="Value",
-               caption = "Andy isn't sure what D and Dss are.
-                          (average value at steady state?  trough?)  
-                          Name should be changed to be more descriptive 
-                          and to be the same for both sim and thy for easy plotting.
-                          Also, TLss should be named either .sim or .thy")
-  gg = ggsaveplot(width=6,height=6,dirs,"SCIM_DoseSensitivity_Accuracy")
-  grid.arrange(gg)
+g <- ggplot(data.plot, aes(x=param.to.change/dose.nmol,y=value,color=key,linetype=key)) + 
+  geom_line(size = 1, alpha = .5) +
+  facet_wrap(~drug) + 
+  xgx_scale_x_log10() + 
+  xgx_scale_y_log10() + 
+  scale_color_manual(values = c(SCIM_sim       = "black",
+                                SCIM_thy_keTL0 = "blue",
+                                SCIM_thy_keTL_negroot = "green",
+                                AFIR_thy = "red")) + 
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL0 = "dotted",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   AFIR_thy = "solid")) + 
+  theme(legend.position="top")  + 
+  ggtitle(paste0("Dose = ", dose.nmol*scale.nmol2mpk, "mg/kg every ", tau/7, "weeks"))
 
-
-
+g = xgx_save(6,6,dirs,"DoseSensitivityAnalysis",draft.flag)
+print(g)
 
 

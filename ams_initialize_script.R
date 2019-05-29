@@ -30,6 +30,16 @@ library(readr)
 library(png)
 library(RxODE)
 
+if (!dir.exists("xgx_Rpackage-master"))
+  unzip("xgx_Rpackage-master.zip")
+
+if (!file.exists("xgx_0.0.1.005.tar.gz")) 
+  devtools::build("xgx_Rpackage-master")
+
+if (!dir.exists("xgx"))
+  install.packages("xgx_Rpackage-master", repos = NULL, lib = "./", type = "source")
+
+library(xgx,lib.loc = "./")
 
 #source additional key functions
 source("xgx_packages_functions.R")
@@ -44,18 +54,20 @@ read.param.file = function(filename) {
 }
 
 #flag for labeling figures as draft
-draft.flag           = FALSE
-print.filenames.flag = TRUE
+draft.flag           = "DRAFT"
 
 #set directories
 top = paste0(normalizePath("../"),"/")
 dirs= list(top.level         = top,
            Rscript.relative  = "./",
            results.relative  = "./results/",
-           results.relative.print = "./results/")
+           results.relative.print = "./results/",
+           parent_dir   = normalizePath("./"),
+           rscript_dir  = "./",
+           results_dir  = "./results/")
 
 #ggplot settings
-theme_set(theme_bw())
+xgx_theme_set()
 
 #scaling params
 scale.mpk2nmol = 70*1e-3/150e3*1e9

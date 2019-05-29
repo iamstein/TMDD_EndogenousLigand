@@ -1,8 +1,8 @@
 source("ams_initialize_script.R")
-source("SCIM_calculation_2019_05_10.R")  
+source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
-dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
+dirs$rscript_name = "Task02a_Sensitivity_SCIM_k_pars.R"
+dirs$filename_prefix =  str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_v1(target = TRUE)
 
@@ -33,7 +33,7 @@ parameters = c("ksynT", "keDT","koff_TL", "kon_TL", "koff_DT","kon_DT")
 tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
-dose.nmol = 100*scale.mpk2nmol
+dose.nmol = 5*scale.mpk2nmol
 isSoluble = FALSE
 
 param.list = list()
@@ -104,8 +104,8 @@ data.plot = all_params %>%
 g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
   geom_line(size = 1, alpha = .5) +
   facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
+  xgx_scale_x_log10() + 
+  xgx_scale_y_log10() + 
   scale_color_manual(values = c(SCIM_sim       = "black",
                                 SCIM_thy_keTL0 = "blue",
                                 SCIM_thy_keTL_negroot = "green",
@@ -113,42 +113,9 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
   scale_linetype_manual(values = c(SCIM_sim = "solid",
                                    SCIM_thy_keTL0 = "dotted",
                                    SCIM_thy_keTL_negroot = "dashed",
-                                   AFIR_thy = "solid"))
+                                   AFIR_thy = "solid")) + 
+  theme(legend.position="top") + 
+  ggtitle(paste0("Dose = ", dose.nmol*scale.nmol2mpk, "mg/kg every ", tau/7, "weeks"))
 
+g = xgx_save(8,8,dirs,"ManySensitivityAnalysis",draft.flag)
 print(g)
-
-# write out sensitivity data w.r.t. different parameters
-
-
-# 
-# 
-# # modify dfs for plotting to compare theory to simulation
-# d.plot = bind_rows(dfs) %>%
-#   gather(metric_full,value,-c(param.to.change,fold.change.param,time_idx,param.to.change1,fold.change.param1,param)) %>%
-#   mutate(type      = str_replace(metric_full,"^.*\\.",""),
-#          metric    = str_replace(metric_full,"\\..*$",""),
-#          value     = as.numeric(value)) %>%
-#   filter(type %in% c("sim","thy"))
-# 
-# #plot theory vs simulation
-# g = ggplot(d.plot,aes(x=fold.change.param,y=value,color=type,linetype=type))
-# 
-# g = g + geom_line()
-# g = g + facet_grid(metric~param, scales="free_y")
-# g = g + scale.x.log10()
-# g = g + scale.y.log10()
-# g = g + labs(x="k_pars",
-#              y="Value")
-# gg = ggsaveplot(width=6,height=6,dirs,"SCIM_k_pars_Accuracy")
-# grid.arrange(gg)
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
