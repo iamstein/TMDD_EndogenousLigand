@@ -73,8 +73,8 @@ data.plot = all_params %>%
 g <- ggplot(data.plot, aes(x=param.to.change/dose.nmol,y=value,color=key,linetype=key)) + 
   geom_line(size = 1, alpha = .5) +
   facet_wrap(~drug) + 
-  xgx_scale_x_log10() + 
-  xgx_scale_y_log10() + 
+  scale_x_log10() + 
+  scale_y_log10() + 
   scale_color_manual(values = c(SCIM_sim       = "black",
                                 SCIM_thy_keTL0 = "blue",
                                 SCIM_thy_keTL_negroot = "green",
