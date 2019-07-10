@@ -77,6 +77,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   SCIM_thy_ketl_pos = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_pos))
   SCIM_thy_ketl_neg = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_neg))
+  
+  SCIM_thy_ketl_neg_26 = with(pars,Ttot/KssTL * Lss/TL0_neg * KssDT/Dss)
+  
+  SCIM_thy_ketl_neg_29 = with(pars,Ttot/( ( ((KssTL*keL/ksynL)*(Dss/KssDT)) +1) *TL0_neg) )
+  
+  SCIM_thy_ketl_neg_31 = with(pars, (ksynT*ksynL*KssDT) / (KssTL*keL*keDT*Dss*TL0_neg) )
 
   lumped_parameters_theory = data.frame(
     TL0_keTL0_thy = TL0_keDT0,
@@ -87,7 +93,13 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     Lss_thy = Lss,
     Dss_thy = Dss,
     SCIM_thy_keTL0        = SCIM_thy_keTL0,
+    # Compare simplified SCIM eqns. 
+    # SCIM_thy_keTL_negroot is the most complex i.e not simplified version of SCIM
+    # 26, 29, and 31 refer to the eqn numbers in the latex doc. for the simplified SCIMs
     SCIM_thy_keTL_negroot = SCIM_thy_ketl_neg,
+    SCIM_thy_keTL_negroot26 = SCIM_thy_ketl_neg_26,
+    SCIM_thy_keTL_negroot29 = SCIM_thy_ketl_neg_29,
+    SCIM_thy_keTL_negroot31 = SCIM_thy_ketl_neg_31,
     SCIM_thy_keTL_posroot = SCIM_thy_ketl_pos,
     AFIR_thy = AFIR_thy,
     stringsAsFactors = FALSE

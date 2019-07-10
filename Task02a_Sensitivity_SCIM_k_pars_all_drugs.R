@@ -117,6 +117,32 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
 
 print(g)
 
+# Compare simplified SCIM eqns. 
+# SCIM_thy_keTL_negroot is the most complex i.e not simplified version of SCIM
+# SCIM_sim is the SCIM from the simulation
+# 26, 29, and 31 refer to the eqn numbers in the latex doc. for the simplified SCIMs
+data.SCIMs = all_params %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, SCIM_thy_keTL_negroot31, drug,param) %>%
+  gather(key,value,-c(fold.change.param,drug,param))
+
+g <- ggplot(data.SCIMs, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
+  geom_line(size = 1, alpha = .6) +
+  facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  scale_color_manual(values = c(SCIM_sim = "black",
+                                SCIM_thy_keTL_negroot = "green",
+                                SCIM_thy_keTL_negroot26 = "blue",
+                                #SCIM_thy_keTL_negroot29 = "orange",
+                                SCIM_thy_keTL_negroot31 = "red")) + 
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   SCIM_thy_keTL_negroot26 = "dotted",
+                                   #SCIM_thy_keTL_negroot29 = "dotted",
+                                   SCIM_thy_keTL_negroot31 = "dashed"))
+
+print(g)
+
 # write out sensitivity data w.r.t. different parameters
 
 
