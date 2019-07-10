@@ -26,7 +26,7 @@ g <- ggplot(data.plot, aes(x=fold.change.param, y=value, color=key, linetype=key
   scale_color_manual(values = c(#SCIM_thy_ketl_pos="orange",
                                TL0.sim="black",
                                TL0.thy="red",
-                               TL0_neg.thy="green"))
+                               TL0_neg.thy="green4"))
                                #TL0_pos.thy="blue"
 print(g)
 

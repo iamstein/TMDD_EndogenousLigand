@@ -47,9 +47,9 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
   model$rxout     = function(result)    {
     result        = as.data.frame(result)
     result = mutate(result,
-                    Ttot = T+DT+TL,
-                    Ltot = L+TL,
-                    Dtot = D+DT)
+                    Ttot = T + DT + TL,
+                    Ltot = L + TL,
+                    Dtot = D + DT)
   }
   
   return(model)
