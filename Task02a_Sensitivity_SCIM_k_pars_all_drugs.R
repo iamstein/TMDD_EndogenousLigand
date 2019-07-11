@@ -53,7 +53,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
   # Check which parameters are nonzero, not including dose which isn't in df_param.
   nnzero = df_param[parameters[which(parameters != "dose")]] != 0
   nnzero = colnames(nnzero)[which(nnzero)]
-  params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.0001, x*1000, 13)))
+  params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.000001, x*1000000, 13)))
   
   dfs = list() #Reset the temp list for every drug
   temp_dfs <- data.frame() #Reset the temporary dataframe
@@ -130,16 +130,37 @@ g <- ggplot(data.SCIMs, aes(x=fold.change.param,y=value,color=key,linetype=key))
   facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
   scale_x_log10() + 
   scale_y_log10() + 
-  scale_color_manual(values = c(SCIM_sim = "black",
-                                SCIM_thy_keTL_negroot = "green",
-                                SCIM_thy_keTL_negroot26 = "blue",
-                                #SCIM_thy_keTL_negroot29 = "orange",
-                                SCIM_thy_keTL_negroot31 = "red")) + 
+  scale_color_manual(values = c(SCIM_sim = "gray25",
+                                SCIM_thy_keTL_negroot = "green3",
+                                SCIM_thy_keTL_negroot26 = "dodgerblue4",
+                                #SCIM_thy_keTL_negroot29 = "yellow",
+                                SCIM_thy_keTL_negroot31 = "darkorange")) + 
   scale_linetype_manual(values = c(SCIM_sim = "solid",
                                    SCIM_thy_keTL_negroot = "dashed",
-                                   SCIM_thy_keTL_negroot26 = "dotted",
+                                   SCIM_thy_keTL_negroot26 = "dotdash",
                                    #SCIM_thy_keTL_negroot29 = "dotted",
                                    SCIM_thy_keTL_negroot31 = "dashed"))
+
+print(g)
+
+# Compare simplified SCIMs and AFIR. 
+data.SCIMs2 = all_params %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, AFIR_thy, drug,param) %>%
+  gather(key,value,-c(fold.change.param,drug,param))
+
+g <- ggplot(data.SCIMs2, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
+  geom_line(size = 1, alpha = .6) +
+  facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  scale_color_manual(values = c(SCIM_sim = "gray25",
+                                SCIM_thy_keTL_negroot = "green3",
+                                SCIM_thy_keTL_negroot26 = "dodgerblue4",
+                                AFIR_thy = "red")) + 
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   SCIM_thy_keTL_negroot26 = "dotdash",
+                                   AFIR_thy = "solid"))
 
 print(g)
 
