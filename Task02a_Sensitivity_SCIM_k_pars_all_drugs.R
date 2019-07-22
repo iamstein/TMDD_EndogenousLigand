@@ -53,7 +53,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
   # Check which parameters are nonzero, not including dose which isn't in df_param.
   nnzero = df_param[parameters[which(parameters != "dose")]] != 0
   nnzero = colnames(nnzero)[which(nnzero)]
-  params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.0001, x*1000, 13)))
+  params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.000001, x*1000000, 13)))
   
   dfs = list() #Reset the temp list for every drug
   temp_dfs <- data.frame() #Reset the temporary dataframe
@@ -98,8 +98,7 @@ param.tablet = param.table %>%
 write.csv(all_params, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
-#  select(fold.change.param,AFIR_thy,SCIM_thy_ketl_neg,SCIM.sim,SCIM.thy,drug,param) %>%
-  dplyr::select(fold.change.param,SCIM.sim,SCIM_thy_ketl_neg,drug,param) %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
 g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
@@ -107,13 +106,60 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
   facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
   scale_x_log10() + 
   scale_y_log10() + 
-  scale_color_manual(values = c(SCIM.sim = "black",
-                                SCIM.thy = "blue",
-                                SCIM_thy_ketl_neg = "green",
+  scale_color_manual(values = c(SCIM_sim       = "black",
+                                SCIM_thy_keTL0 = "blue",
+                                SCIM_thy_keTL_negroot = "green",
                                 AFIR_thy = "red")) + 
-  scale_linetype_manual(values = c(SCIM.sim = "solid",
-                                   SCIM.thy = "dotted",
-                                   SCIM_thy_ketl_neg = "dashed",
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL0 = "dotted",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   AFIR_thy = "solid"))
+
+print(g)
+
+# Compare simplified SCIM eqns. 
+# SCIM_thy_keTL_negroot is the most complex i.e not simplified version of SCIM
+# SCIM_sim is the SCIM from the simulation
+# 26, 29, and 31 refer to the eqn numbers in the latex doc. for the simplified SCIMs
+data.SCIMs = all_params %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, SCIM_thy_keTL_negroot31, drug,param) %>%
+  gather(key,value,-c(fold.change.param,drug,param))
+
+g <- ggplot(data.SCIMs, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
+  geom_line(size = 1, alpha = .6) +
+  facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  scale_color_manual(values = c(SCIM_sim = "gray25",
+                                SCIM_thy_keTL_negroot = "green3",
+                                SCIM_thy_keTL_negroot26 = "dodgerblue4",
+                                #SCIM_thy_keTL_negroot29 = "yellow",
+                                SCIM_thy_keTL_negroot31 = "darkorange")) + 
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   SCIM_thy_keTL_negroot26 = "dotdash",
+                                   #SCIM_thy_keTL_negroot29 = "dotted",
+                                   SCIM_thy_keTL_negroot31 = "dashed"))
+
+print(g)
+
+# Compare simplified SCIMs and AFIR. 
+data.SCIMs2 = all_params %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, AFIR_thy, drug,param) %>%
+  gather(key,value,-c(fold.change.param,drug,param))
+
+g <- ggplot(data.SCIMs2, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
+  geom_line(size = 1, alpha = .6) +
+  facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  scale_color_manual(values = c(SCIM_sim = "gray25",
+                                SCIM_thy_keTL_negroot = "green3",
+                                SCIM_thy_keTL_negroot26 = "dodgerblue4",
+                                AFIR_thy = "red")) + 
+  scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                   SCIM_thy_keTL_negroot = "dashed",
+                                   SCIM_thy_keTL_negroot26 = "dotdash",
                                    AFIR_thy = "solid"))
 
 print(g)
