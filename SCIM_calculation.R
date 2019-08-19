@@ -63,7 +63,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #AFIR_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*koff_DT/kon_DT) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
   SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keDT0)))
   AFIR_thy = with(pars,(KssDT*(Ttot/T0))/Dss)
-  
+  AFIR_mod_thy = with(pars, (KssDT*(Ttot/T0))/(KssDT*(Ttot/T0)+Dss))
   
   #For KeTL ~= 0
   a = with(pars,keTL^2)
@@ -102,6 +102,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     SCIM_thy_keTL_negroot31 = SCIM_thy_ketl_neg_31,
     SCIM_thy_keTL_posroot = SCIM_thy_ketl_pos,
     AFIR_thy = AFIR_thy,
+    AFIR_mod_thy = AFIR_mod_thy,
     stringsAsFactors = FALSE
   )
   return(lumped_parameters_theory)

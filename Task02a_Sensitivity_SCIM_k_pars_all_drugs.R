@@ -93,7 +93,7 @@ param_tablet = param_table %>%
 write.csv(all_simulations, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_simulations %>%
-  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_mod_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
 g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
@@ -104,11 +104,11 @@ g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) 
   scale_color_manual(values = c(SCIM_sim       = "black",
                                 SCIM_thy_keTL0 = "blue",
                                 SCIM_thy_keTL_negroot = "green",
-                                AFIR_thy = "red")) + 
+                                AFIR_mod_thy = "red")) + 
   scale_linetype_manual(values = c(SCIM_sim = "solid",
                                    SCIM_thy_keTL0 = "dotted",
                                    SCIM_thy_keTL_negroot = "dashed",
-                                   AFIR_thy = "solid"))
+                                   AFIR_mod_thy = "solid"))
 
 print(g)
 
@@ -140,7 +140,7 @@ print(g)
 
 # Compare simplified SCIMs and AFIR. 
 data.SCIMs2 = all_simulations %>%
-  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, AFIR_thy, drug,param) %>%
+  dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, AFIR_mod_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
 g <- ggplot(data.SCIMs2, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
@@ -151,11 +151,11 @@ g <- ggplot(data.SCIMs2, aes(x=fold.change.param,y=value,color=key,linetype=key)
   scale_color_manual(values = c(SCIM_sim = "gray25",
                                 SCIM_thy_keTL_negroot = "green3",
                                 SCIM_thy_keTL_negroot26 = "dodgerblue4",
-                                AFIR_thy = "red")) + 
+                                AFIR_mod_thy = "red")) + 
   scale_linetype_manual(values = c(SCIM_sim = "solid",
                                    SCIM_thy_keTL_negroot = "dashed",
                                    SCIM_thy_keTL_negroot26 = "dotdash",
-                                   AFIR_thy = "solid"))
+                                   AFIR_mod_thy = "solid"))
 
 print(g)
 
