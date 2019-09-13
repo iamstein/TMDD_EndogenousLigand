@@ -1,4 +1,5 @@
 source("ams_initialize_script.R")
+rxSetIni0(FALSE)
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
@@ -8,6 +9,8 @@ model = ivsc_2cmt_RR_v1(target = TRUE)
 
 #Drug list to loop through for finding file names
 drugs_list = list("Pembro","VEGFR1","VEGFR2","Atezoli","Ramuc","Siltux","Tociliz") #ADD THIS LINE
+
+dfs = data.frame() #ADD THIS LINE
 
 # Create paths to data files for each drug.
 param = NULL #ADD THIS LINE
@@ -35,8 +38,9 @@ dose.nmol = 100*scale.mpk2nmol
 isSoluble = FALSE
 
 param.list = list()
-all_simulations <- list() #ADD THIS LINE
+all_params <- data.frame() #ADD THIS LINE
 for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
+  
 
   # Load parameters.
   param.as.double =  read.param.file(param[i]) #ADD THIS LINE (CHANGED VARIABLE NAME TO PARAM)
@@ -52,11 +56,12 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
   nnzero = colnames(nnzero)[which(nnzero)]
   params.to.iterate = data.frame(lapply(df_param[nnzero], function(x) lseq(x*0.000001, x*1000000, 13)))
   
-  simulation_drugi = list() #Reset the temp list for every drug
-
+  dfs = list() #Reset the temp list for every drug
+  temp_dfs <- data.frame() #Reset the temporary dataframe
+  
   # Iterate all of the parameters for a single drug.
   for (j in 1:ncol(params.to.iterate)){
-    simulation_drugi[[j]] = compare.thy.sim(model = model,
+    dfs[[j]] = compare.thy.sim(model = model,
                                param.as.double = param.as.double,
                                dose.nmol = dose.nmol,
                                tmax = tmax,
@@ -65,34 +70,35 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
                                param.to.change = names(params.to.iterate)[j],
                                param.to.change.range = params.to.iterate[[j]],
                                soluble = isSoluble)
+    #REMOVE THIS LINE
+    #dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs_list[i], isSol = isSoluble)
   }
   #ADD THESE LINES
-  simulation_drugi = simulation_drugi %>%
-    bind_rows() %>%
-    mutate(drug = as.character(drugs_list[i]))
-  all_simulations[[i]] = simulation_drugi
+  temp_dfs <- bind_rows(dfs) #create a temp dataframe for all the data
+  temp_dfs$drug <- as.character(drugs_list[i])
+  all_params <- rbind(all_params,temp_dfs) #Cat data frame
 }
-all_simulations = bind_rows(all_simulations)
 
-param_table = bind_rows(param.list) %>%
+
+param.table = bind_rows(param.list) %>%
   mutate(Kd_DT  = koff_DT/kon_DT,
          Kss_DT = (koff_DT + keDT)/kon_DT,
          Kd_TL  = koff_TL/kon_TL,
          Kss_TL = (koff_TL + keTL)/kon_TL)
-#View(param_table)
+#View(param.table)
 
-drug = param_table$drug
-param_tablet = param_table %>%
+drug = param.table$drug
+param.tablet = param.table %>%
   dplyr::select(-drug) %>%
   t() %>%
   as.data.frame() %>%
   setNames(drug)
-#View(param_tablet)
+#View(param.tablet)
 
 
-write.csv(all_simulations, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
+write.csv(all_params, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
-data.plot = all_simulations %>%
+data.plot = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
@@ -116,7 +122,7 @@ print(g)
 # SCIM_thy_keTL_negroot is the most complex i.e not simplified version of SCIM
 # SCIM_sim is the SCIM from the simulation
 # 26, 29, and 31 refer to the eqn numbers in the latex doc. for the simplified SCIMs
-data.SCIMs = all_simulations %>%
+data.SCIMs = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, SCIM_thy_keTL_negroot31, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
@@ -139,7 +145,7 @@ g <- ggplot(data.SCIMs, aes(x=fold.change.param,y=value,color=key,linetype=key))
 print(g)
 
 # Compare simplified SCIMs and AFIR. 
-data.SCIMs2 = all_simulations %>%
+data.SCIMs2 = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL_negroot26, AFIR_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 

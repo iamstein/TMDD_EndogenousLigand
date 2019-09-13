@@ -1,6 +1,6 @@
 source("ams_initialize_script.R")
 source("ivsc_2cmt_RR_V1.R")
-source("SCIM_calculation_2019_05_10.R")
+source("SCIM_calculation.R")
 dirs$Rscript.name = "Task01_Doseage_Effect_ModelG.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
