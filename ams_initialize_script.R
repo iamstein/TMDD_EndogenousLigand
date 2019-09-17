@@ -13,26 +13,28 @@ set.seed(123456)
 .libPaths(grep("usr", .libPaths(), value=TRUE, invert=TRUE))
 
 #add key packages
-library(GGally)
-library(MASS)  
-library(rmarkdown)
+#library(GGally)
+#library(MASS)  
+#library(rmarkdown)
 library(knitr)
-library(foreign)
-library(caTools)
-library(grid)
-library(gridExtra)
-library(reshape2)
+#library(foreign)
+#library(caTools)
+#library(grid)
+#library(gridExtra)
+#library(reshape2)
 library(stringr)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(readr)
-library(png)
+library(readxl)
+#library(png)
 library(RxODE)
+library(xgxr)
 
 
 #source additional key functions
-source("xgx_packages_functions.R")
+#source("xgx_packages_functions.R")
 
 #helper fuction for reading parameter files
 #it assumes model has been defined above and only model$pin params are kept in the vector
