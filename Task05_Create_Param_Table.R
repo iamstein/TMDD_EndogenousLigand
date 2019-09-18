@@ -24,4 +24,17 @@ for (drug in drugs_list) { #ADD THIS LOOP
     as.data.frame() %>%
     mutate(drug = drug)
 }
+
 param = bind_rows(param)
+
+param_summ = param %>%
+  bind_rows() %>%
+  select(-F,-ka) %>%
+  select(drug,everything()) %>%
+  t() %>%
+  as.data.frame() 
+names(param_summ) = param$drug
+
+write.csv(param_summ, "parameters/Task05_Param_Summary.csv",quote = FALSE, row.names = TRUE)
+
+  
