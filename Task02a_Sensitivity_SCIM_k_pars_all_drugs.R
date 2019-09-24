@@ -1,5 +1,6 @@
 source("ams_initialize_script.R")
-source("SCIM_calculation_2019_05_10.R")  
+#rxSetIni0(FALSE)
+source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
