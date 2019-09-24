@@ -62,8 +62,10 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   #AFIR_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*koff_DT/kon_DT) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
   SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keDT0)))
-  AFIR_thy = with(pars,(KssDT*(Ttot/T0))/Dss)
+  AFIR_thy_simple = with(pars,(KssDT*(Ttot/T0))/Dss)
   
+  Tacc     = Ttot/T0
+  AFIR_thy = with(pars,(KssDT*Tacc)/(Dss+Tacc))
   
   #For KeTL ~= 0
   a = with(pars,keTL^2)
@@ -102,6 +104,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     SCIM_thy_keTL_negroot31 = SCIM_thy_ketl_neg_31,
     SCIM_thy_keTL_posroot = SCIM_thy_ketl_pos,
     AFIR_thy = AFIR_thy,
+    AFIR_thy_simple = AFIR_thy_simple,
     stringsAsFactors = FALSE
   )
   return(lumped_parameters_theory)
@@ -142,6 +145,7 @@ lumped.parameters.simulation = function(model           = model,
                 dosing.to=compartment)
   
   init = model$init(param.as.double)
+  #print(param.as.double)
   out  = model$rxode$solve(param.as.double, ev, init)
   out  = model$rxout(out)
   
@@ -209,17 +213,16 @@ compare.thy.sim = function(model                 = model,
   param.as.double.original = param.as.double
   param.to.change.original = param.to.change
   
-  # Simulation
   
+  # SIMULATION: Iterate through parameters
   df_sim = data.frame()
-  
-  # Iterate through values in range.
   for (param.iter in param.to.change.range){
     if (param.to.change == 'dose'){
       dose.nmol = param.iter
     } else {
       param.as.double[param.to.change] = param.iter
     }
+    #KEY LINE FOR COMPUTED PARAMETERS FROM SIMULATION
     row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, soluble)
     df_sim = rbind(df_sim, row)
   }
@@ -232,17 +235,16 @@ compare.thy.sim = function(model                 = model,
                                fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
   }
   
-  # Theory
   
+  #THEORY: Iterate through parameters
   df_thy = data.frame()
-  
-  # Iterate through values in range.
   for (param.iter in param.to.change.range){
     if(param.to.change == 'dose'){
       dose.nmol = param.iter 
     } else {
       param.as.double[param.to.change] = param.iter
     }
+    #KEY LINE FOR COMPUTED PARAMETERS FROM THEORY
     row = lumped.parameters.theory(param.as.double, dose.nmol, tau, soluble)
     df_thy = rbind(df_thy, row)
   }

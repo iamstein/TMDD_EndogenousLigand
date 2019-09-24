@@ -11,7 +11,6 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
   model$init      = function(p){
     init = c(AmtD0=0,AmtD=0,AmtD2=0,T=0,DT=0,L=0,TL=0)
     p    = p %>% t() %>% as.data.frame()
-    p
     Ttot0_approx = with(p,ksynT/keT)
     Ltot0_approx = with(p,ksynL/keL)
     
