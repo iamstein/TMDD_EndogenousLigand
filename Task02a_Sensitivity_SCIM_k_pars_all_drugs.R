@@ -1,5 +1,5 @@
 source("ams_initialize_script.R")
-rxSetIni0(FALSE)
+#rxSetIni0(FALSE)
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"

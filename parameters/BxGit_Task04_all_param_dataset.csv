@@ -1,0 +1,389 @@
+,drug,param,valunit,value
+1,"""7E3""",CL,L/d,0.00013
+2,"""7E3""",Q,L/d,0.0055
+3,"""7E3""",Vc,L,0.0034
+4,"""7E3""",Vp,L,0.02
+5,abciximab,theta_CL_BW,-,NA
+6,adalimumab,CL,L/d,0.32
+7,adalimumab,F,-,NA
+8,adalimumab,ka,1/d,0.28
+386,VEGF Trap,Kd,nM,0.000575
+10,adalimumab,koff,1/d,NA
+11,adalimumab,kon,1/nM/d,NA
+12,adalimumab,om2_CL,-,0.17
+13,adalimumab,om2_Vd,-,0.92
+14,adalimumab,S0,nM,0.001
+15,adalimumab,theta_CL_BW,-,NA
+16,adalimumab,Vc,L,10.8
+17,alemtuzumab,theta_CL_BW,-,NA
+18,atezolizumab,CL,L/d,0.2
+194,ixekizumab,Kd,nM,0.0018
+20,atezolizumab,MWD,kDa,144.6
+21,atezolizumab,Q,L/d,0.546
+22,atezolizumab,theta_CL_ALB,-,-1.12
+23,atezolizumab,theta_CL_ATAG,-,0.159
+24,atezolizumab,theta_CL_BW,-,0.808
+25,atezolizumab,theta_CL_Tumor,-,0.125
+26,atezolizumab,theta_Vc_ALB,-,-0.35
+27,atezolizumab,theta_Vc_BW,-,0.559
+28,atezolizumab,Vc,L,3.28
+29,atezolizumab,Vp,L,3.63
+30,atm027,CL,L/d,0.19
+31,atm027,Q,L/d,2.18
+32,atm027,Vc,L,2.8
+33,atm027,Vp,L,3.1
+34,avelumab,CL,L/d,0.6432
+35,avelumab,Cminss,nM,204.0816327
+36,avelumab,EC50,nM,0.829931973
+98,denosumab,Kd,nM,0.003
+38,avelumab,MWD,kDa,147
+39,avelumab,Q,L/d,0.6312
+40,avelumab,theta_CL_BW,-,0.462
+41,avelumab,theta_Vc_BW,-,0.509
+42,avelumab,Vc,L,3.16
+43,avelumab,Vp,L,1.01
+44,basiliximab,CL,L/d,1.106
+45,basiliximab,Q,L/d,2.3695
+46,basiliximab,Vc,L,4.595
+47,basiliximab,Vp,L,2.93
+48,bevacizumab,CL,L/d,0.195666667
+49,bevacizumab,F,-,NA
+50,bevacizumab,ka,1/d,NA
+51,bevacizumab,kcp,1/d,0.11
+168,hVEGFR1-Fc,Kd,nM,0.00933
+139,etanercept,Kd,nM,0.0114
+54,bevacizumab,keD,1/d,0.064
+55,bevacizumab,keDS,1/d,0.062863777
+56,bevacizumab,keS,1/d,3.7005
+57,bevacizumab,koff,1/d,2.6784
+58,bevacizumab,kon,1/nM/d,45.792
+59,bevacizumab,kpc,1/d,0.15
+60,bevacizumab,ksynS,nM/d,0.008112565
+61,bevacizumab,MWS,kDa,38.2
+62,bevacizumab,Q,L/d,0.777666667
+63,bevacizumab,S0,nM,0.003774869
+64,bevacizumab,Stotss,nM,0.2
+65,bevacizumab,theta_CL_BW,-,0.368
+66,bevacizumab,Vc,L,2.996666667
+67,bevacizumab,Vp,L,2.93
+68,brentuximab vedotin,CL,L/d,1.56
+69,brentuximab vedotin,Cminss,nM,6.535947712
+70,brentuximab vedotin,EC50,nM,0.012
+116,eculizumab,Kd,nM,0.0176
+72,brentuximab vedotin,MWD,kDa,153
+73,brentuximab vedotin,Q1,L/d,2.83
+74,brentuximab vedotin,Q2,L/d,0.708
+75,brentuximab vedotin,theta_CL_BW,-,0.698
+76,brentuximab vedotin,theta_CL_Vc,-,0.503
+77,brentuximab vedotin,Vc,L,4.29
+78,brentuximab vedotin,Vp1,L,3.83
+79,brentuximab vedotin,Vp2,L,9.52
+80,canakinumab,CL,L/d,0.214
+81,canakinumab,F,-,0.648
+82,canakinumab,ka,1/d,0.269
+158,golimumab,Kd,nM,0.018
+84,canakinumab,MWS,kDa,17.5
+85,canakinumab,Q,L/d,0.503
+86,canakinumab,S0,nM,0.000171429
+87,canakinumab,theta_CL_BW,-,NA
+88,canakinumab,Vc,L,4.58
+89,canakinumab,Vp,L,2.86
+90,cetuximab,Cminss,nM,342.1052632
+320,siltuximab,KdS,nM,0.02
+92,cetuximab,MWD,kDa,152
+93,cetuximab,theta_CL_BW,-,NA
+94,daclizumab,theta_CL_BW,-,0.463
+95,denosumab,CL,L/d,0.0685
+96,denosumab,F,-,0.619
+97,denosumab,ka,1/d,0.153
+292,ranibizumab,Kd,nM,0.0333
+99,denosumab,Km,nM,1.210884354
+100,denosumab,MWD,kDa,147
+101,denosumab,MWM,kDa,25
+102,denosumab,MWS,kDa,37.5
+103,denosumab,Q,L/d,0.581
+104,denosumab,Vc,L,2.4
+105,denosumab,Vm,nM/d,0.251272882
+106,denosumab,Vp,L,1.765
+107,DX400 anti-PD1 mouse,CL,L/d,0.000334
+108,DX400 anti-PD1 mouse,Km,nM,2.44
+109,DX400 anti-PD1 mouse,MWD,kDa,150
+110,DX400 anti-PD1 mouse,MWM,kDa,32
+111,DX400 anti-PD1 mouse,Q,L/d,0.00482
+112,DX400 anti-PD1 mouse,Vc,L,0.00126
+113,DX400 anti-PD1 mouse,Vm,nM/d,2.740740741
+114,DX400 anti-PD1 mouse,Vp,L,0.000819
+115,eculizumab,CL,L/d,0.3504
+175,infliximab,Kd,nM,0.03565
+117,eculizumab,koff,1/d,1.9872
+118,eculizumab,kon,1/nM/d,112.32
+119,eculizumab,S0,nM,500
+120,eculizumab,theta_CL_BW,-,NA
+121,eculizumab,Vc,L,6.14
+122,efalizumab,CL,L/d,0.524
+123,efalizumab,F,-,0.564
+124,efalizumab,ka,1/d,0.2165
+125,efalizumab,Km,nM,0.434333333
+126,efalizumab,MWD,kDa,150
+127,efalizumab,Q,L/d,1.4485
+128,efalizumab,theta_CL_BW,-,0.754
+129,efalizumab,Vc,L,4.82
+130,efalizumab,Vm,nM/d,3.163020608
+131,efalizumab,Vp,L,3.22
+132,EGF,keDM,1/d,360
+133,EGF,keM,1/d,100.8
+134,EGF,koff,1/d,345.6
+135,EGF,kon,1/nM/d,139.68
+136,etanercept,CL,L/d,1.728
+137,etanercept,F,-,0.569
+138,etanercept,ka,1/d,0.5352
+37,avelumab,Kd,nM,0.0421
+140,etanercept,koff,1/d,NA
+141,etanercept,kon,1/nM/d,NA
+142,etanercept,Q,L/d,0.852
+143,etanercept,S0,nM,0.001
+144,etanercept,Vc,L,5.49
+145,etanercept,Vp,L,1.24
+146,figitumumab,CL,L/d,0.248
+147,figitumumab,Km,nM,8.356164384
+148,figitumumab,MWD,kDa,146
+149,figitumumab,Q,L/d,0.7
+150,figitumumab,Vc,L,4.02
+151,figitumumab,Vm,nM/d,4.123219519
+152,figitumumab,Vp,L,6.82
+153,gemtuzumab ozogamicin,theta_CL_BW,-,NA
+154,GM-CSF,keDM,1/d,38.4
+155,golimumab,CL,L/d,0.905
+156,golimumab,F,-,NA
+157,golimumab,ka,1/d,0.125
+52,bevacizumab,Kd,nM,0.04655
+159,golimumab,koff,1/d,NA
+160,golimumab,kon,1/nM/d,NA
+161,golimumab,om2_Vc,-,0.146
+162,golimumab,om2_Vp,-,0.561
+163,golimumab,Q,L/d,0.453
+164,golimumab,S0,nM,0.001
+165,golimumab,theta_CL_BW,-,NA
+166,golimumab,Vc,L,4.835
+167,golimumab,Vp,L,8.19
+265,panitumumab,Kd,nM,0.05
+169,hVEGFR1-Fc,koff,1/d,24.192
+170,hVEGFR1-Fc,kon,1/nM/d,2592
+9,adalimumab,Kd,nM,0.0787
+172,hVEGFR2-Fc,koff,1/d,116.64
+173,hVEGFR2-Fc,kon,1/nM/d,1313.28
+174,infliximab,CL,L/d,0.354666667
+171,hVEGFR2-Fc,Kd,nM,0.0888
+176,infliximab,koff,1/d,NA
+177,infliximab,kon,1/nM/d,NA
+178,infliximab,omCL,-,0.428
+179,infliximab,omVc,-,0.00289
+180,infliximab,Q,L/d,5.453333333
+181,infliximab,S0,nM,0.001
+182,infliximab,theta_CL_BW,-,NA
+183,infliximab,Vc,L,3.143333333
+184,infliximab,Vp,L,3.753333333
+185,inolimomab,CL,L/d,1.85
+186,inolimomab,Q,L/d,53.3
+187,inolimomab,Vc,L,2.76
+188,inolimomab,Vp,L,2.25
+189,insulin,keDM,1/d,3.312
+190,insulin,keM,1/d,1.728
+191,ixekizumab,CL,L/d,0.3744
+192,ixekizumab,F,-,0.81
+193,ixekizumab,ka,1/d,0.24
+380,ustekinumab,Kd,nM,0.1
+195,ixekizumab,koff,1/d,1.1232
+196,ixekizumab,kon,1/nM/d,648
+197,ixekizumab,MWS,kDa,18
+198,ixekizumab,Q,L/d,0.7968
+199,ixekizumab,Vc,L,2.6
+200,ixekizumab,Vp,L,4.3
+201,mabcc49i125,CL,L/d,1.53
+202,mabcc49i125,Q,L/d,0.154
+203,mabcc49i125,Vc,L,3.46
+204,mabcc49i125,Vp,L,2.5
+205,mabf19,CL,L/d,2.62
+206,mabf19,Q,L/d,3.41
+207,mabf19,Vc,L,3.13
+208,mabf19,Vp,L,1.74
+209,many,CL,L/d,0.00048
+210,matuzumab,CL,L/d,0.348
+211,matuzumab,Km,nM,26.66666667
+212,matuzumab,MWD,kDa,150
+213,matuzumab,Q,L/d,0.919
+214,matuzumab,theta_CL_BW,-,NA
+215,matuzumab,Vc,L,3.72
+216,matuzumab,Vm,nM/d,19.53405018
+217,matuzumab,Vp,L,1.84
+218,mavrilimumab,keDM,1/d,12.72
+219,MEDI575,keDM,1/d,14.4
+220,MMHAR2,keDM,1/d,3.84
+221,natalizumab,theta_CL_BW,-,NA
+222,nivolumab,CL,L/d,0.2256
+365,trastuzumab emtansine,Kd,nM,0.14
+224,nivolumab,MWD,kDa,143.6
+225,nivolumab,om2_CL,-,0.123
+226,nivolumab,om2_Emax,-,0.0719
+227,nivolumab,om2_Vc,-,0.123
+228,nivolumab,om2_Vp,-,0.258
+229,nivolumab,Q,L/d,0.7704
+230,nivolumab,theta_CL_BW,-,0.566
+231,nivolumab,theta_Vc_BW,-,0.597
+232,nivolumab,Vc,L,3.63
+233,nivolumab,Vp,L,2.78
+234,ofatumumab,CL,L/d,0.18
+235,ofatumumab,EC50,nM,0.59
+357,trastuzumab,Kd,nM,0.335
+237,ofatumumab,MWD,kDa,146.1
+238,ofatumumab,Q,L/d,0.5328
+239,ofatumumab,theta_CL_BW,-,NA
+240,ofatumumab,Vc,L,3.26
+241,ofatumumab,Vp,L,2.07
+242,omalizumab,CL,L/d,0.09534
+243,omalizumab,F,-,0.42
+244,omalizumab,ka,1/d,0.436666667
+245,omalizumab,kcp,1/d,NA
+275,pembrolizumab,Kd,nM,0.3895
+91,cetuximab,Kd,nM,0.39
+248,omalizumab,keD,1/d,0.005
+249,omalizumab,keDS,1/d,0.2
+250,omalizumab,keS,1/d,0.93
+251,omalizumab,koff,1/d,87.264
+252,omalizumab,kon,1/nM/d,129.6
+253,omalizumab,kpc,1/d,NA
+254,omalizumab,ksynS,nM/d,1.4
+255,omalizumab,MWS,kDa,190
+256,omalizumab,Q,L/d,NA
+257,omalizumab,S0,nM,3.381578947
+258,omalizumab,Stotss,nM,7
+259,omalizumab,theta_CL_BW,-,0.911
+260,omalizumab,Vc,L,4.45
+261,otelixizumab,keDM,1/d,1.275
+262,otelixizumab,keM,1/d,0.275
+263,palivizumab,theta_CL_BW,-,NA
+264,panitumumab,CL,L/d,0.273
+19,atezolizumab,Kd,nM,0.4
+266,panitumumab,Km,nM,2.897959184
+267,panitumumab,MWD,kDa,147
+268,panitumumab,Q,L/d,0.39
+269,panitumumab,theta_CL_BW,-,0.411
+270,panitumumab,Vc,L,3.95
+271,panitumumab,Vm,nM/d,20.83871523
+272,panitumumab,Vp,L,2.59
+273,pembrolizumab,CL,L/d,0.194
+274,pembrolizumab,EC50,nM,3.566666667
+83,canakinumab,KdS,nM,1.117
+276,pembrolizumab,Km,nM,0.522666667
+277,pembrolizumab,MWD,kDa,150
+278,pembrolizumab,om2_CL,-,0.133
+279,pembrolizumab,om2_Q,-,0.133
+280,pembrolizumab,om2_Vc,-,0.0413
+281,pembrolizumab,om2_Vp,-,0.0413
+282,pembrolizumab,Q,L/d,0.5885
+283,pembrolizumab,Vc,L,3.18
+284,pembrolizumab,Vm,nM/d,0.263888889
+285,pembrolizumab,Vp,L,3.455
+286,pertuzumab,CL,L/d,0.214
+287,pertuzumab,MWD,kDa,148
+288,pertuzumab,Q,L/d,0.556
+289,pertuzumab,theta_CL_BW,-,0.587
+290,pertuzumab,Vc,L,2.74
+291,pertuzumab,Vp,L,2.16
+247,omalizumab,KdS,nM,1.685
+293,ranibizumab,koff,1/d,2.6784
+294,ranibizumab,kon,1/nM/d,13.824
+295,rituximab,CL,L/d,0.255
+296,rituximab,CL2,L/d,0.278
+297,rituximab,CL2_k,1/d,0.141
+298,rituximab,EC50,nM,0.81
+299,rituximab,kcp,1/d,0.22
+223,nivolumab,Kd,nM,1.99
+301,rituximab,kpc,1/d,0.18
+302,rituximab,MWD,kDa,145
+303,rituximab,Q,L/d,0.833
+304,rituximab,theta_CL_BW,-,NA
+305,rituximab,Vc,L,3.526666667
+306,rituximab,Vp,L,6.11
+307,sibrotuzumab,CL,L/d,0.53
+308,sibrotuzumab,Km,nM,1.469798658
+309,sibrotuzumab,MWD,kDa,149
+310,sibrotuzumab,Q,L/d,0.902
+311,sibrotuzumab,theta_CL_BW,-,NA
+312,sibrotuzumab,Vc,L,4.13
+313,sibrotuzumab,Vm,nM/d,1.3179063
+314,sibrotuzumab,Vp,L,3.19
+315,siltuximab,CL,L/d,NA
+316,siltuximab,F,-,NA
+317,siltuximab,ka,1/d,NA
+318,siltuximab,kcp,1/d,0.1395
+71,brentuximab vedotin,Kd,nM,3
+334,tocilizumab,KdS,nM,4.307692308
+321,siltuximab,keD,1/d,0.058
+322,siltuximab,keDS,1/d,0.03
+323,siltuximab,keS,1/d,40
+324,siltuximab,koff,1/d,NA
+325,siltuximab,kon,1/nM/d,NA
+326,siltuximab,kpc,1/d,0.1885
+327,siltuximab,ksynS,nM/d,0.005
+328,siltuximab,MWS,kDa,21
+329,siltuximab,Q,L/d,0.56
+330,siltuximab,S0,nM,0.000298095
+331,siltuximab,Stotss,nM,0.17
+332,siltuximab,Vc,L,NA
+333,tocilizumab,CL,L/d,0.289
+236,ofatumumab,Kd,nM,4.76
+335,tocilizumab,keDS,1/d,0.07686
+336,tocilizumab,keS,1/d,1.26
+337,tocilizumab,Km,nM,2.531034483
+338,tocilizumab,ksynS,nM/d,1.131360947
+339,tocilizumab,MWD,kDa,145
+340,tocilizumab,MWS,kDa,42.25
+341,tocilizumab,om2_CL,-,0.076
+342,tocilizumab,om2_Kd,-,0.895
+343,tocilizumab,om2_keS,-,7.41
+344,tocilizumab,om2_keS_Kd,-,-0.128
+345,tocilizumab,om2_Q,-,0.129
+346,tocilizumab,om2_Vc,-,0.1
+347,tocilizumab,om2_Vm,-,0.056
+348,tocilizumab,om2_Vp,-,0.296
+349,tocilizumab,Q,L/d,0.202
+350,tocilizumab,sigma2_prop,-,0.045
+351,tocilizumab,theta_CL_BW,-,NA
+352,tocilizumab,Vc,L,3.71
+353,tocilizumab,Vm,nM/d,9.724137931
+354,tocilizumab,Vp,L,3.45
+355,trastuzumab,CL,L/d,0.225
+356,trastuzumab,EC50,nM,2.06185567
+300,rituximab,Kd,nM,5.45
+358,trastuzumab,MWD,kDa,145.5
+359,trastuzumab,Q,L/d,0.484
+360,trastuzumab,theta_CL_BW,-,NA
+361,trastuzumab,Vc,L,2.95
+362,trastuzumab,Vp,L,4.79
+363,trastuzumab emtansine,CL,L/d,0.676
+364,trastuzumab emtansine,EC50,nM,0.607744108
+53,bevacizumab,KdS,nM,142.5
+366,trastuzumab emtansine,MWD,kDa,148.5
+367,trastuzumab emtansine,om2_CL,-,0.1911
+368,trastuzumab emtansine,om2_CL_Vc,-,0.00011
+369,trastuzumab emtansine,om2_Q,-,1.808
+370,trastuzumab emtansine,om2_Vc,-,0.1166
+371,trastuzumab emtansine,om2_Vp,-,0.745
+372,trastuzumab emtansine,Q,L/d,1.534
+373,trastuzumab emtansine,theta_CL_BW,-,0.49
+374,trastuzumab emtansine,theta_Vc_BW,-,0.596
+375,trastuzumab emtansine,Vc,L,3.127
+376,trastuzumab emtansine,Vp,-,0.66
+377,ustekinumab,CL,L/d,0.465
+378,ustekinumab,F,-,1
+379,ustekinumab,ka,1/d,0.354
+246,omalizumab,Kd,nM,NA
+381,ustekinumab,koff,1/d,4.4064
+382,ustekinumab,kon,1/nM/d,43.2
+383,ustekinumab,S0,nM,0.002
+384,ustekinumab,theta_CL_BW,-,0.84
+385,ustekinumab,Vc,L,15.7
+319,siltuximab,Kd,nM,NA
+387,VEGF Trap,koff,1/d,1.73664
+388,VEGF Trap,kon,1/nM/d,3542.4
