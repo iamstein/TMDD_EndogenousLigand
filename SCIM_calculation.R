@@ -19,7 +19,7 @@ lseq = function(from, to, length.out){
   return(sequence)
 }
 
-# Theoretical lumped parameters #----------------------------------------------------------------------------------
+# Theory #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
                                     tau             = tau){
@@ -42,19 +42,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   KssDT = with(pars,(koff_DT+keDT)/kon_DT)
   
   
-  
+  #compute Ctrough
   dose = dose.nmol
   alpha= with(pars, .5*(k12+k21+keD + sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   beta = with(pars, .5*(k12+k21+keD - sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   A    = with(pars, dose*(k21-alpha)/(V1*(beta-alpha)))
-  #Ap   = with(pars, dose* k12       /(V1*(beta-alpha))) #peripheral 1
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
-  #Bp   = with(pars, dose* k12       /(V1*(alpha-beta))) #peripheral 2
-  
-  #t_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
-  #C_vec = dose.nmol*(A*exp(-alpha*t_vec)/(1-exp(-alpha*tau)) + B*exp(-beta*t_vec)/(1-exp(-beta*tau)))
-  
-  #Dss = min(C_vec)
   Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
   
   
@@ -108,8 +101,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   return(lumped_parameters_theory)
 }
 
-# Simulated lumped parameters ----------------------------------------------------------------------------------
-
+# Simulation ----------------------------------------------------------------------------------
 lumped.parameters.simulation = function(model           = model, 
                                         param.as.double = param.as.double,
                                         dose.nmol       = dose.nmol, 
@@ -140,6 +132,7 @@ lumped.parameters.simulation = function(model           = model,
   sample.points = unique(sample.points)
   ev$add.sampling(sample.points)
   
+  #add dur  tau for a long infusion
   if (infusion == FALSE) {
     ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment)
   } else {
@@ -147,16 +140,16 @@ lumped.parameters.simulation = function(model           = model,
   }  
   
   init = model$init(param.as.double)
-  #print(param.as.double)
   out  = model$rxode$solve(param.as.double, ev, init)
   out  = model$rxout(out)
   
-  # Calculate lumped parameters
+  # Calculate initial condition
   initial_state = out %>%
     filter(time==0)
   TL0 = initial_state$TL
   T0 = initial_state$T
   
+  #TODO - think more about this code - it's jsut a bit confusing here.  Why - 3?  Why 10*?
   idx_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
   out_vec = out[which(round(10*out$time) %in% round(10*idx_vec)),]
   time_idx = out_vec$time[which(out_vec$D == min(out_vec$D))]
@@ -183,7 +176,7 @@ lumped.parameters.simulation = function(model           = model,
   return(lumped_parameters_sim)
 }
 
-# Compare Theory to Simulation for sensitivity analysis ----------------------------------------------------------------------------------
+# Theory + Simulation: Compare ----------------------------------------------------------------------------------
 #  on the user inputted parameter 
 
 # Input: 
