@@ -22,13 +22,11 @@ lseq = function(from, to, length.out){
 # Theoretical lumped parameters #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
-                                    tau             = tau,
-                                    soluble         = FALSE){
+                                    tau             = tau){
   # Arguments:
   #   params_file_path: full path of the parameters file.
   #   dose.nmol: dosing amout in nmol
   #   tau: dosing interval in days
-  #   soluble: flag saying whether or not drug is soluble. Default to FALSE.
   # Return:
   #   A data frame of lumped parameters calculated from theory
   
@@ -118,7 +116,7 @@ lumped.parameters.simulation = function(model           = model,
                                         tmax            = tmax, 
                                         tau             = tau, 
                                         compartment,
-                                        soluble         = FALSE){
+                                        infusion        = FALSE){
   
   # Arguments:
   #   model_name: name of the model
@@ -128,7 +126,7 @@ lumped.parameters.simulation = function(model           = model,
   #   tau: dosing interval in days
   #   compartment: compartment to which dosing is applied
   #   (in model F case, compartment=2)
-  #   soluble: flag saying whether or not drug is soluble. Default to FALSE.
+  #   infusion.  default FALSE.  If True, then dose is a long infusino, throughout tau
   # Return:
   #   A data frame of lumped parameters calculated from simulation
   
@@ -141,8 +139,12 @@ lumped.parameters.simulation = function(model           = model,
   sample.points = sort(sample.points)
   sample.points = unique(sample.points)
   ev$add.sampling(sample.points)
-  ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau,
-                dosing.to=compartment)
+  
+  if (infusion == FALSE) {
+    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment)
+  } else {
+    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
+  }  
   
   init = model$init(param.as.double)
   #print(param.as.double)
@@ -193,7 +195,6 @@ lumped.parameters.simulation = function(model           = model,
 # compartment - compartment where drug is administered
 # param.to.change - parameter on which to do SA. This must be a string.
 # param.to.change.range - range of parameter on which to do SA. The range must be symmetric in fold change. This must be a vector of odd length.
-# soluble - boolean that is true/false if the drug is soluble/insoluble. Need this since soluble and insoluble are treated differently.
 
 # Output:
 # Data frame of AFIRT vs parameter value
@@ -206,7 +207,7 @@ compare.thy.sim = function(model                 = model,
                            compartment           = compartment,
                            param.to.change       = param.to.change,
                            param.to.change.range = param.to.change.range,
-                           soluble               = FALSE) {
+                           infusion              = FALSE) {
   
   # Store the orignal parameter set and parameter to be changed. 
   # This is needed to divide by the baseline value when calculating the fold change.
@@ -223,7 +224,7 @@ compare.thy.sim = function(model                 = model,
       param.as.double[param.to.change] = param.iter
     }
     #KEY LINE FOR COMPUTED PARAMETERS FROM SIMULATION
-    row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, soluble)
+    row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
     df_sim = rbind(df_sim, row)
   }
   
@@ -245,7 +246,7 @@ compare.thy.sim = function(model                 = model,
       param.as.double[param.to.change] = param.iter
     }
     #KEY LINE FOR COMPUTED PARAMETERS FROM THEORY
-    row = lumped.parameters.theory(param.as.double, dose.nmol, tau, soluble)
+    row = lumped.parameters.theory(param.as.double, dose.nmol, tau)
     df_thy = rbind(df_thy, row)
   }
   
