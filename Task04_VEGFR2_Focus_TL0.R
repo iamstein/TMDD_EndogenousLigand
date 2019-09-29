@@ -34,7 +34,6 @@ tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
 dose.nmol = 100*scale.mpk2nmol
-isSoluble = FALSE
 
 param.list = list()
 all_params <- data.frame() #ADD THIS LINE
@@ -69,8 +68,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
                                param.to.change = names(params.to.iterate)[j],
                                param.to.change.range = params.to.iterate[[j]],
                                soluble = isSoluble)
-    #REMOVE THIS LINE
-    #dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs_list[i], isSol = isSoluble)
+
   }
   #ADD THESE LINES
   temp_dfs <- bind_rows(dfs) #create a temp dataframe for all the data
@@ -95,7 +93,7 @@ param.tablet = param.table %>%
 #View(param.tablet)
 
 
-write.csv(all_params, file = "task04.csv")
+write.csv(all_params, file = "Task04.csv")
 
 data.plot <- all_params %>%
   dplyr::select(fold.change.param, 

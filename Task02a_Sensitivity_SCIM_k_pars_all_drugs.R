@@ -35,7 +35,6 @@ tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
 dose.nmol = 100*scale.mpk2nmol
-isSoluble = FALSE
 
 param.list = list()
 all_params <- data.frame() #ADD THIS LINE
@@ -61,17 +60,16 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
   
   # Iterate all of the parameters for a single drug.
   for (j in 1:ncol(params.to.iterate)){
+    param.to.change       = names(params.to.iterate)[j]
+    param.to.change.range = params.to.iterate[[j]]
     dfs[[j]] = compare.thy.sim(model = model,
                                param.as.double = param.as.double,
                                dose.nmol = dose.nmol,
                                tmax = tmax,
                                tau  = tau,
                                compartment = compartment,
-                               param.to.change = names(params.to.iterate)[j],
-                               param.to.change.range = params.to.iterate[[j]],
-                               soluble = isSoluble)
-    #REMOVE THIS LINE
-    #dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs_list[i], isSol = isSoluble)
+                               param.to.change = param.to.change,
+                               param.to.change.range = param.to.change.range)
   }
   #ADD THESE LINES
   temp_dfs <- bind_rows(dfs) #create a temp dataframe for all the data
@@ -96,25 +94,25 @@ param.tablet = param.table %>%
 #View(param.tablet)
 
 
-write.csv(all_params, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
+write.csv(all_params, file = "Task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
   gather(key,value,-c(fold.change.param,drug,param))
 
-g <- ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key)) + 
-  geom_line(size = 1, alpha = .5) +
-  facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
-  scale_x_log10() + 
-  scale_y_log10() + 
-  scale_color_manual(values = c(SCIM_sim       = "black",
-                                SCIM_thy_keTL0 = "blue",
-                                SCIM_thy_keTL_negroot = "green",
-                                AFIR_thy = "red")) + 
-  scale_linetype_manual(values = c(SCIM_sim = "solid",
-                                   SCIM_thy_keTL0 = "dotted",
-                                   SCIM_thy_keTL_negroot = "dashed",
-                                   AFIR_thy = "solid"))
+g = ggplot(data.plot, aes(x=fold.change.param,y=value,color=key,linetype=key))
+g = g + geom_line(size = 1, alpha = .5) 
+g = g + facet_grid(drug ~ param,scales = "free_y", switch = "y") 
+g = g + scale_x_log10() 
+g = g + scale_y_log10()
+g = g + scale_color_manual   (values = c(SCIM_sim       = "black",
+                                         SCIM_thy_keTL0 = "blue",
+                                         SCIM_thy_keTL_negroot = "green",
+                                         AFIR_thy = "red"))
+g = g + scale_linetype_manual(values = c(SCIM_sim = "solid",
+                                         SCIM_thy_keTL0 = "dotted",
+                                         SCIM_thy_keTL_negroot = "dashed",
+                                         AFIR_thy = "solid"))
 
 print(g)
 
@@ -154,49 +152,13 @@ g <- ggplot(data.SCIMs2, aes(x=fold.change.param,y=value,color=key,linetype=key)
   facet_grid(drug ~ param,scales = "free_y", switch = "y") + 
   scale_x_log10() + 
   scale_y_log10() + 
-  scale_color_manual(values = c(SCIM_sim = "gray25",
-                                SCIM_thy_keTL_negroot = "green3",
-                                SCIM_thy_keTL_negroot26 = "dodgerblue4",
-                                AFIR_thy = "red")) + 
+  scale_color_manual   (values = c(SCIM_sim = "gray25",
+                                   SCIM_thy_keTL_negroot = "green3",
+                                   SCIM_thy_keTL_negroot26 = "dodgerblue4",
+                                   AFIR_thy = "red")) + 
   scale_linetype_manual(values = c(SCIM_sim = "solid",
                                    SCIM_thy_keTL_negroot = "dashed",
                                    SCIM_thy_keTL_negroot26 = "dotdash",
                                    AFIR_thy = "solid"))
 
 print(g)
-
-# write out sensitivity data w.r.t. different parameters
-
-
-# 
-# 
-# # modify dfs for plotting to compare theory to simulation
-# d.plot = bind_rows(dfs) %>%
-#   gather(metric_full,value,-c(param.to.change,fold.change.param,time_idx,param.to.change1,fold.change.param1,param)) %>%
-#   mutate(type      = str_replace(metric_full,"^.*\\.",""),
-#          metric    = str_replace(metric_full,"\\..*$",""),
-#          value     = as.numeric(value)) %>%
-#   filter(type %in% c("sim","thy"))
-# 
-# #plot theory vs simulation
-# g = ggplot(d.plot,aes(x=fold.change.param,y=value,color=type,linetype=type))
-# 
-# g = g + geom_line()
-# g = g + facet_grid(metric~param, scales="free_y")
-# g = g + scale.x.log10()
-# g = g + scale.y.log10()
-# g = g + labs(x="k_pars",
-#              y="Value")
-# gg = ggsaveplot(width=6,height=6,dirs,"SCIM_k_pars_Accuracy")
-# grid.arrange(gg)
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 

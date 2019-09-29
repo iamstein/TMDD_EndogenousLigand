@@ -204,59 +204,44 @@ compare.thy.sim = function(model                 = model,
   
   # Store the orignal parameter set and parameter to be changed. 
   # This is needed to divide by the baseline value when calculating the fold change.
-  param.as.double.original = param.as.double
-  param.to.change.original = param.to.change
+    param.original = param.as.double[param.to.change]
+    dose.original  = dose.nmol
+    param.to.change.name = param.to.change
   
+  #Iterate through parameters
+    df_sim = list()
+    df_thy = list()
+    i      = 0
+    for (param.iter in param.to.change.range){
+      if (param.to.change == 'dose'){
+        dose.nmol = param.iter
+      } else {
+        param.as.double[param.to.change] = param.iter
+      }
+      
+      #KEY LINES FOR COMPUTING THEORY AND SIMULATION
+      i=i+1
+      df_sim[[i]] = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
+      df_thy[[i]] = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau)
+    }
   
-  # SIMULATION: Iterate through parameters
-  df_sim = data.frame()
-  for (param.iter in param.to.change.range){
+  #store final results in data.frame    
+    df_thy = bind_rows(df_thy) %>% mutate(param.to.change = param.to.change.range)
+    df_sim = bind_rows(df_sim) %>% mutate(param.to.change = param.to.change.range)
+    
     if (param.to.change == 'dose'){
-      dose.nmol = param.iter
+      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/dose.original)
+      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/dose.original)
     } else {
-      param.as.double[param.to.change] = param.iter
+      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/param.original)
+      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/param.original)
     }
-    #KEY LINE FOR COMPUTED PARAMETERS FROM SIMULATION
-    row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
-    df_sim = rbind(df_sim, row)
-  }
-  
-  if (param.to.change == 'dose'){
-    df_sim = df_sim %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/dose.nmol)
-  } else {
-    df_sim = df_sim %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
-  }
-  
-  
-  #THEORY: Iterate through parameters
-  df_thy = data.frame()
-  for (param.iter in param.to.change.range){
-    if(param.to.change == 'dose'){
-      dose.nmol = param.iter 
-    } else {
-      param.as.double[param.to.change] = param.iter
-    }
-    #KEY LINE FOR COMPUTED PARAMETERS FROM THEORY
-    row = lumped.parameters.theory(param.as.double, dose.nmol, tau)
-    df_thy = rbind(df_thy, row)
-  }
-  
-  if (param.to.change == 'dose'){
-    df_thy = df_thy %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/dose.nmol)
-  } else {
-    df_thy = df_thy %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
-  }
   
   # Arrange theory and simulation in single data frame.
-  df_compare = bind_cols(df_thy,df_sim)
-  param      = param.to.change
-  df_compare = df_compare %>%
-    mutate(param = param) %>%
-    mutate_if(is.numeric,signif,6)
+    df_compare = bind_cols(df_thy,df_sim)
+    df_compare = df_compare %>%
+      mutate(param = param.to.change.name) %>%
+      mutate_if(is.numeric,signif,6)
   
   return(df_compare)
 }

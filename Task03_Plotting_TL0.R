@@ -1,6 +1,6 @@
 source("ams_initialize_script.R")
 
-params <- read.csv(file ="task02a_sensitivity_all drugs and params_100_updated 04_24.csv",header = TRUE)
+params <- read.csv(file ="Task02a_sensitivity_all drugs and params_100_updated 04_24.csv",header = TRUE)
 
 
 

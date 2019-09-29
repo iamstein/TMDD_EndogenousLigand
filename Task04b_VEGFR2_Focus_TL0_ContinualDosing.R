@@ -11,7 +11,6 @@ tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
 dose.nmol = 100*scale.mpk2nmol
-isSoluble = FALSE
 
 #compute the simulation with the final parameter set, just to make sure it's getting to steady state
 ev = eventTable(amount.units="nmol", time.units="days")

@@ -35,7 +35,6 @@ tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
 dose.nmol = 100*scale.mpk2nmol
-isSoluble = FALSE
 
 param.list = list()
 all_params <- data.frame() #ADD THIS LINE
@@ -69,10 +68,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
                                compartment = compartment,
                                param.to.change = names(params.to.iterate)[j],
                                param.to.change.range = params.to.iterate[[j]],
-                               soluble = isSoluble,
                                infusion = TRUE)
-    #REMOVE THIS LINE
-    #dfs[[j]] = dfs[[j]] %>% mutate(drug = drugs_list[i], isSol = isSoluble)
   }
   #ADD THESE LINES
   temp_dfs <- bind_rows(dfs) #create a temp dataframe for all the data
@@ -95,9 +91,6 @@ param.tablet = param.table %>%
   as.data.frame() %>%
   setNames(drug)
 #View(param.tablet)
-
-
-#write.csv(all_params, file = "task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%
