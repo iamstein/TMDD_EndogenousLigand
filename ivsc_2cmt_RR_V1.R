@@ -9,14 +9,29 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
   model$cmtshort  = c('AmtD0','AmtD','AmtD2','T','DT','L','LT')
   #CALCULATE INITIAL CONDITION WITH NO DRUG PRESENT AND ASSUMING STEADY STATE
   model$init      = function(p){
-    init = c(AmtD0=0,AmtD=0,AmtD2=0,T=0,DT=0,L=0,TL=0)
     p    = p %>% t() %>% as.data.frame()
-    Ttot0_approx = with(p,ksynT/keT)
-    Ltot0_approx = with(p,ksynL/keL)
+
+    if (p$keTL == 0) {
+      TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
+      T0  = with(p,ksynT/keT)
+    } else {
+      a = with(p,keTL^2)
+      b = with(p,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
+      c = with(p, ksynL*ksynT)
+      
+      TL0 <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+      T0 = with(p,(ksynT - keTL*TL0)/keT)
+    }    
+    L0 = with(p,(ksynL + koff_TL*TL0)/(kon_TL*T0 + keL))
     
-    init["T"]=Ttot0_approx
-    init["L"]=Ltot0_approx
-    
+    init = c(AmtD0=0,
+             AmtD=0,
+             AmtD2=0,
+             T=T0,
+             DT=0,
+             L=L0,
+             TL=TL0)
+
     return(init)
   }
   
@@ -28,6 +43,8 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
                       'Vm','Km',
                       'kon_DT','koff_DT','kon_TL','koff_TL'); #input parameters
   model$pode      = model$pin
+  
+  model$repar = function(p) {return(p)}
   
   #                        INPUT      BINDING DRUG                BINDING LIGAND        SYNTHESIS  ELIMINATION            DISTRIBUTION
   model$rxode.str = '
@@ -53,3 +70,42 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
   
   return(model)
 }
+
+
+ivsc_2cmt_RR_KeqT0L0 = function(target = TRUE) {
+  model           = ivsc_2cmt_RR_v1()
+  model$name      = 'ivsc_2cmt_DTL'
+  
+  #COMPARTMENTS
+  model$cmtshort  = c('AmtD0','AmtD','AmtD2','T','DT','L','LT')
+  #CALCULATE INITIAL CONDITION WITH NO DRUG PRESENT AND ASSUMING STEADY STATE
+  model$init      = function(p){
+    p    = p %>% t() %>% as.data.frame()
+    init = c(AmtD0 = 0,
+             AmtD  = 0,
+             AmtD2 = 0,
+             T     = p$T0,
+             DT    = 0,
+             L     = p$L0,
+             TL    = with(p,T0*L0/Kss_TL))
+    
+    return(init)
+  }
+  
+  #PARAMEETRS IN MODEL
+  model$pode       =  c('F','ka','V1', 'k12','k21','ksynT','ksynL','keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','koff_DT','kon_TL','koff_TL'); #ode parameters
+  model$pin        =  c('F','ka','V1', 'k12','k21','T0'   ,'L0'   ,'keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','Kss_DT' ,'kon_TL','Kss_TL'); #input parameters
+  
+  model$repar = function(p) {
+    p     = as.data.frame(as.list(p))
+    TL0   = with(p,T0*L0/Kss_TL)
+    p     = mutate(p,
+                   koff_TL = Kss_TL*kon_TL + keTL,
+                   koff_DT = Kss_DT*kon_DT + keDT,
+                   ksynT   = T0*keT + keTL*TL0,
+                   ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+    return(unlist(p))
+  }
+  return(model)
+}
+

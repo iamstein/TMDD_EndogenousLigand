@@ -30,11 +30,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   # Return:
   #   A data frame of lumped parameters calculated from theory
   
-  pars    = as.data.frame(t(param.as.double))
+  pars    = as.data.frame(t(model$repar(param.as.double)))
   #CL = with(pars, (keD*V1))
-  #TL0 = with(pars, ksynT*ksynL/(koff_TL/kon_TL*keT*(keL+kon_TL) - ksynT*koff_TL))
-  T0  = with(pars, ksynT/keT)
-  TL0_keDT0 = with(pars, ksynL*T0/(koff_TL/kon_TL*keL))
+  #TL0 = with(pars, ksynT*ksynL/(koff_TL/kon_TL*keT*(keL+kon_TL) - ksynT*koff_TL)) 
+  #L0 = with(pars, )
+  #T0 = with(pars, )
+  #TL0 = with(pars, T0*L0/Kss_TL)
   #Tacc = with(pars,keT  /keDT)
   Lss  = with(pars,ksynL/keL)
   Ttot = with(pars,ksynT/keDT)
@@ -50,22 +51,21 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
   Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
   
-  
-  #AFIR_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*koff_DT/kon_DT) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
-  SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keDT0)))
-  AFIR_thy_simple = with(pars,(KssDT*(Ttot/T0))/Dss)
-  
-  Tacc     = Ttot/T0
-  AFIR_thy = with(pars,(KssDT*Tacc)/(Dss+Tacc))
-  
+
   #For KeTL ~= 0
   a = with(pars,keTL^2)
   b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
-  c =with(pars, ksynL*ksynT)
+  c = with(pars, ksynL*ksynT)
   
   TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a)
- 
+  
   TL0_neg <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+  
+  if (pars$keTL == 0) {
+    T0 = with(pars,ksynT/keT)
+  } else {
+    T0 = with(pars,(ksynT - keTL*TL0_neg)/keT)
+  }
   
   
   SCIM_thy_ketl_pos = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_pos))
@@ -76,9 +76,17 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   SCIM_thy_ketl_neg_29 = with(pars,Ttot/( ( ((KssTL*keL/ksynL)*(Dss/KssDT)) +1) *TL0_neg) )
   
   SCIM_thy_ketl_neg_31 = with(pars, (ksynT*ksynL*KssDT) / (KssTL*keL*keDT*Dss*TL0_neg) )
-
+  
+  Tacc     = Ttot/T0
+  AFIR_thy = with(pars,(KssDT*Tacc)/(Dss+Tacc))
+  
+  TL0_keTL0 = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
+  
+  SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keTL0)))
+  AFIR_thy_simple = with(pars,(KssDT*(Ttot/T0))/Dss)
+  
   lumped_parameters_theory = data.frame(
-    TL0_keTL0_thy = TL0_keDT0,
+    TL0_keTL0_thy = TL0_keTL0,
     TL0_negroot_thy = TL0_neg,
     TL0_posroot_thy = TL0_pos,
     T0_thy = T0,
@@ -140,7 +148,7 @@ lumped.parameters.simulation = function(model           = model,
   }  
   
   init = model$init(param.as.double)
-  out  = model$rxode$solve(param.as.double, ev, init)
+  out  = model$rxode$solve(model$repar(param.as.double), ev, init)
   out  = model$rxout(out)
   
   # Calculate initial condition
@@ -204,44 +212,44 @@ compare.thy.sim = function(model                 = model,
   
   # Store the orignal parameter set and parameter to be changed. 
   # This is needed to divide by the baseline value when calculating the fold change.
-    param.original = param.as.double[param.to.change]
-    dose.original  = dose.nmol
-    param.to.change.name = param.to.change
+  param.original = param.as.double[param.to.change]
+  dose.original  = dose.nmol
+  param.to.change.name = param.to.change
   
   #Iterate through parameters
-    df_sim = list()
-    df_thy = list()
-    i      = 0
-    for (param.iter in param.to.change.range){
-      if (param.to.change == 'dose'){
-        dose.nmol = param.iter
-      } else {
-        param.as.double[param.to.change] = param.iter
-      }
-      
-      #KEY LINES FOR COMPUTING THEORY AND SIMULATION
-      i=i+1
-      df_sim[[i]] = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
-      df_thy[[i]] = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau)
+  df_sim = list()
+  df_thy = list()
+  i      = 0
+  for (param.iter in param.to.change.range){
+    if (param.to.change == 'dose'){
+      dose.nmol = param.iter
+    } else {
+      param.as.double[param.to.change] = param.iter
     }
+    
+    #KEY LINES FOR COMPUTING THEORY AND SIMULATION
+    i=i+1
+    df_sim[[i]] = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
+    df_thy[[i]] = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau)
+  }
   
   #store final results in data.frame    
-    df_thy = bind_rows(df_thy) %>% mutate(param.to.change = param.to.change.range)
-    df_sim = bind_rows(df_sim) %>% mutate(param.to.change = param.to.change.range)
-    
-    if (param.to.change == 'dose'){
-      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/dose.original)
-      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/dose.original)
-    } else {
-      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/param.original)
-      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/param.original)
-    }
+  df_thy = bind_rows(df_thy) %>% mutate(param.to.change = param.to.change.range)
+  df_sim = bind_rows(df_sim) %>% mutate(param.to.change = param.to.change.range)
+  
+  if (param.to.change == 'dose'){
+    df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/dose.original)
+    df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/dose.original)
+  } else {
+    df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/param.original)
+    df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/param.original)
+  }
   
   # Arrange theory and simulation in single data frame.
-    df_compare = bind_cols(df_thy,df_sim)
-    df_compare = df_compare %>%
-      mutate(param = param.to.change.name) %>%
-      mutate_if(is.numeric,signif,6)
+  df_compare = bind_cols(df_thy,df_sim)
+  df_compare = df_compare %>%
+    mutate(param = param.to.change.name) %>%
+    mutate_if(is.numeric,signif,6)
   
   return(df_compare)
 }
