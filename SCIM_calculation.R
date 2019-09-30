@@ -19,16 +19,14 @@ lseq = function(from, to, length.out){
   return(sequence)
 }
 
-# Theoretical lumped parameters #----------------------------------------------------------------------------------
+# Theory #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
-                                    tau             = tau,
-                                    soluble         = FALSE){
+                                    tau             = tau){
   # Arguments:
   #   params_file_path: full path of the parameters file.
   #   dose.nmol: dosing amout in nmol
   #   tau: dosing interval in days
-  #   soluble: flag saying whether or not drug is soluble. Default to FALSE.
   # Return:
   #   A data frame of lumped parameters calculated from theory
   
@@ -44,19 +42,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   KssDT = with(pars,(koff_DT+keDT)/kon_DT)
   
   
-  
+  #compute Ctrough
   dose = dose.nmol
   alpha= with(pars, .5*(k12+k21+keD + sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   beta = with(pars, .5*(k12+k21+keD - sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
   A    = with(pars, dose*(k21-alpha)/(V1*(beta-alpha)))
-  #Ap   = with(pars, dose* k12       /(V1*(beta-alpha))) #peripheral 1
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
-  #Bp   = with(pars, dose* k12       /(V1*(alpha-beta))) #peripheral 2
-  
-  #t_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
-  #C_vec = dose.nmol*(A*exp(-alpha*t_vec)/(1-exp(-alpha*tau)) + B*exp(-beta*t_vec)/(1-exp(-beta*tau)))
-  
-  #Dss = min(C_vec)
   Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
   
   
@@ -110,15 +101,14 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   return(lumped_parameters_theory)
 }
 
-# Simulated lumped parameters ----------------------------------------------------------------------------------
-
+# Simulation ----------------------------------------------------------------------------------
 lumped.parameters.simulation = function(model           = model, 
                                         param.as.double = param.as.double,
                                         dose.nmol       = dose.nmol, 
                                         tmax            = tmax, 
                                         tau             = tau, 
                                         compartment,
-                                        soluble         = FALSE){
+                                        infusion        = FALSE){
   
   # Arguments:
   #   model_name: name of the model
@@ -128,7 +118,7 @@ lumped.parameters.simulation = function(model           = model,
   #   tau: dosing interval in days
   #   compartment: compartment to which dosing is applied
   #   (in model F case, compartment=2)
-  #   soluble: flag saying whether or not drug is soluble. Default to FALSE.
+  #   infusion.  default FALSE.  If True, then dose is a long infusino, throughout tau
   # Return:
   #   A data frame of lumped parameters calculated from simulation
   
@@ -141,20 +131,25 @@ lumped.parameters.simulation = function(model           = model,
   sample.points = sort(sample.points)
   sample.points = unique(sample.points)
   ev$add.sampling(sample.points)
-  ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau,
-                dosing.to=compartment)
+  
+  #add dur  tau for a long infusion
+  if (infusion == FALSE) {
+    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment)
+  } else {
+    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
+  }  
   
   init = model$init(param.as.double)
-  #print(param.as.double)
   out  = model$rxode$solve(param.as.double, ev, init)
   out  = model$rxout(out)
   
-  # Calculate lumped parameters
+  # Calculate initial condition
   initial_state = out %>%
     filter(time==0)
   TL0 = initial_state$TL
   T0 = initial_state$T
   
+  #TODO - think more about this code - it's jsut a bit confusing here.  Why - 3?  Why 10*?
   idx_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
   out_vec = out[which(round(10*out$time) %in% round(10*idx_vec)),]
   time_idx = out_vec$time[which(out_vec$D == min(out_vec$D))]
@@ -181,7 +176,7 @@ lumped.parameters.simulation = function(model           = model,
   return(lumped_parameters_sim)
 }
 
-# Compare Theory to Simulation for sensitivity analysis ----------------------------------------------------------------------------------
+# Theory + Simulation: Compare ----------------------------------------------------------------------------------
 #  on the user inputted parameter 
 
 # Input: 
@@ -193,7 +188,6 @@ lumped.parameters.simulation = function(model           = model,
 # compartment - compartment where drug is administered
 # param.to.change - parameter on which to do SA. This must be a string.
 # param.to.change.range - range of parameter on which to do SA. The range must be symmetric in fold change. This must be a vector of odd length.
-# soluble - boolean that is true/false if the drug is soluble/insoluble. Need this since soluble and insoluble are treated differently.
 
 # Output:
 # Data frame of AFIRT vs parameter value
@@ -206,63 +200,48 @@ compare.thy.sim = function(model                 = model,
                            compartment           = compartment,
                            param.to.change       = param.to.change,
                            param.to.change.range = param.to.change.range,
-                           soluble               = FALSE) {
+                           infusion              = FALSE) {
   
   # Store the orignal parameter set and parameter to be changed. 
   # This is needed to divide by the baseline value when calculating the fold change.
-  param.as.double.original = param.as.double
-  param.to.change.original = param.to.change
+    param.original = param.as.double[param.to.change]
+    dose.original  = dose.nmol
+    param.to.change.name = param.to.change
   
+  #Iterate through parameters
+    df_sim = list()
+    df_thy = list()
+    i      = 0
+    for (param.iter in param.to.change.range){
+      if (param.to.change == 'dose'){
+        dose.nmol = param.iter
+      } else {
+        param.as.double[param.to.change] = param.iter
+      }
+      
+      #KEY LINES FOR COMPUTING THEORY AND SIMULATION
+      i=i+1
+      df_sim[[i]] = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment)
+      df_thy[[i]] = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau)
+    }
   
-  # SIMULATION: Iterate through parameters
-  df_sim = data.frame()
-  for (param.iter in param.to.change.range){
+  #store final results in data.frame    
+    df_thy = bind_rows(df_thy) %>% mutate(param.to.change = param.to.change.range)
+    df_sim = bind_rows(df_sim) %>% mutate(param.to.change = param.to.change.range)
+    
     if (param.to.change == 'dose'){
-      dose.nmol = param.iter
+      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/dose.original)
+      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/dose.original)
     } else {
-      param.as.double[param.to.change] = param.iter
+      df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/param.original)
+      df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/param.original)
     }
-    #KEY LINE FOR COMPUTED PARAMETERS FROM SIMULATION
-    row = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, soluble)
-    df_sim = rbind(df_sim, row)
-  }
-  
-  if (param.to.change == 'dose'){
-    df_sim = df_sim %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/dose.nmol)
-  } else {
-    df_sim = df_sim %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
-  }
-  
-  
-  #THEORY: Iterate through parameters
-  df_thy = data.frame()
-  for (param.iter in param.to.change.range){
-    if(param.to.change == 'dose'){
-      dose.nmol = param.iter 
-    } else {
-      param.as.double[param.to.change] = param.iter
-    }
-    #KEY LINE FOR COMPUTED PARAMETERS FROM THEORY
-    row = lumped.parameters.theory(param.as.double, dose.nmol, tau, soluble)
-    df_thy = rbind(df_thy, row)
-  }
-  
-  if (param.to.change == 'dose'){
-    df_thy = df_thy %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/dose.nmol)
-  } else {
-    df_thy = df_thy %>% mutate(param.to.change = param.to.change.range,
-                               fold.change.param = param.to.change.range/param.as.double.original[param.to.change.original])
-  }
   
   # Arrange theory and simulation in single data frame.
-  df_compare = bind_cols(df_thy,df_sim)
-  param      = param.to.change
-  df_compare = df_compare %>%
-    mutate(param = param) %>%
-    mutate_if(is.numeric,signif,6)
+    df_compare = bind_cols(df_thy,df_sim)
+    df_compare = df_compare %>%
+      mutate(param = param.to.change.name) %>%
+      mutate_if(is.numeric,signif,6)
   
   return(df_compare)
 }

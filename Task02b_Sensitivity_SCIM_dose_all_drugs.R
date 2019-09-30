@@ -28,7 +28,6 @@ tmax = 364 #days
 tau  = 21   #days
 compartment = 2
 dose.nmol = 10*scale.mpk2nmol
-isSoluble = FALSE
 
 # --------------------------------------------------------------------------------
 # Iterate over all the drugs.

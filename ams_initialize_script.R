@@ -34,7 +34,6 @@ library(xgxr)
 
 
 #source additional key functions
-#source("xgx_packages_functions.R")
 
 #helper fuction for reading parameter files
 #it assumes model has been defined above and only model$pin params are kept in the vector
