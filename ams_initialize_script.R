@@ -41,8 +41,31 @@ read.param.file = function(filename) {
   d                      = read_excel(filename, 1)
   param.as.double        = suppressWarnings(as.numeric(d$Value))
   names(param.as.double) = d$Parameter
-  param.as.double        = param.as.double[model$pin] #keep only parameters used in ODE
+  #param.as.double        = param.as.double[model$pin] #keep only parameters used in ODE
+  return(param.as.double)
 }
+
+lseq = function(from, to, length.out){
+  # Arguments:
+  #   from : initial value of the variable
+  #   to : teminal value of the variable
+  #   length.out : fold number of <to - from>
+  # Return :
+  #   A vector of length <length.out>
+  
+  sequence = seq(log(from), log(to), length.out=length.out)
+  sequence = exp(sequence)
+  return(sequence)
+}
+
+drugs = c("Atezolizumab",
+          "Bevacizumab_VEGFR1",
+          "Bevacizumab_VEGFR2",
+          "Pembrolizumab",
+          "Ramucirumab",
+          "Siltuximab",
+          "Tocilizumab")
+parameter_files = paste0("parameters/ModelG_",drugs,"_Params.xlsx")
 
 #flag for labeling figures as draft
 draft.flag           = FALSE

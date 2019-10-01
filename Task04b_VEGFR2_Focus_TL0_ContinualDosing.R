@@ -4,7 +4,7 @@ source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
-model = ivsc_2cmt_RR_v1(target = TRUE)
+model = ivsc_2cmt_RR_v1()
 
 # Dose time, frequency, compartment, nominal dose
 tmax = 52*7 #days

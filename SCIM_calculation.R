@@ -1,24 +1,3 @@
-# Helper function that returns a range of variable when performing sensitvity analysis  -----------------------------------------------------
-read.param.file = function(filename) {
-  d                      = read_excel(filename, 1)
-  param.as.double        = suppressWarnings(as.numeric(d$Value))
-  names(param.as.double) = d$Parameter
-  param.as.double        = param.as.double[model$pin] #keep only parameters used in ODE
-}
-
-lseq = function(from, to, length.out){
-  # Arguments:
-  #   from : initial value of the variable
-  #   to : teminal value of the variable
-  #   length.out : fold number of <to - from>
-  # Return :
-  #   A vector of length <length.out>
-  
-  sequence = seq(log(from), log(to), length.out=length.out)
-  sequence = exp(sequence)
-  return(sequence)
-}
-
 # Theory #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
