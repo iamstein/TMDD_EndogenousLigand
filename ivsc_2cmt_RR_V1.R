@@ -11,6 +11,7 @@ ivsc_2cmt_RR_v1 = function() {
     if (p$keTL == 0) {
       TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
       T0  = with(p,ksynT/keT)
+      L0  = with(p,ksynL/keL)
     } else {
       a = with(p,keTL^2)
       b = with(p,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
@@ -18,8 +19,8 @@ ivsc_2cmt_RR_v1 = function() {
       
       TL0 = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
       T0  = with(p,(ksynT - keTL*TL0)/keT)
+      L0 =  with(p,(ksynL - keTL*TL0)/keL)
     }    
-    L0 = with(p,(ksynL + koff_TL*TL0)/(kon_TL*T0 + keL))
     
     init = c(AmtD0=0,
              AmtD=0,

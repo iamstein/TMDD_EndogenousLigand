@@ -34,18 +34,20 @@ for (drug in drugs) {
   out  = model$rxout(out)
   
   pars = param.as.double %>% t() %>% as.data.frame()
-  if (pars$keTL == 0) {
-    TL0 = with(pars,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
-    T0  = with(pars,ksynT/keT)
+  p    = pars
+  if (p$keTL == 0) {
+    TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
+    T0  = with(p,ksynT/keT)
+    L0  = with(p,ksynL/keL)
   } else {
-    a = with(pars,keTL^2)
-    b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
-    c = with(pars, ksynL*ksynT)
+    a = with(p,keTL^2)
+    b = with(p,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
+    c = with(p, ksynL*ksynT)
     
-    TL0 <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
-    T0 = with(pars,(ksynT - keTL*TL0)/keT)
+    TL0 = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+    T0  = with(p,(ksynT - keTL*TL0)/keT)
+    L0 =  with(p,(ksynL - keTL*TL0)/keL)
   }    
-  L0 = with(pars,(ksynL + koff_TL*TL0)/(kon_TL*T0 + keL))
   
   out_long[[drug]] = out %>%
     dplyr::select(time,T,L,TL) %>%

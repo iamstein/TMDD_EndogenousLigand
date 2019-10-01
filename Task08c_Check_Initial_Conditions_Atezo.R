@@ -54,18 +54,14 @@ drug = drugs[1]
   #solve the model
     init1 = model1$init(param.as.double[model1$pin])
     init2 = model2$init(param.as.double[model2$pin])
+    print(bind_rows(init1,init2))
     
-    p11   = param.as.double[model1$pin]
-    p21   = model2$repar(param.as.double[model2$pin])
+    p11   = param.as.double[model1$pin] #parameter 1
+    p21   = model2$repar(param.as.double[model2$pin])[model2$pode] #convert param2 back to param1
+    print(bind_rows(p11,p21))
     
     out1  = model1$rxode$solve(model1$repar(param.as.double), ev, init1)
     out1  = model1$rxout(out1)
     
     out2  = model2$rxode$solve(model2$repar(param.as.double), ev, init2)
     out2  = model2$rxout(out2)
-    
-    
-#}
-out_long = bind_rows(out_long)
-out1     = out_long %>%
-  filter(!duplicated(drug))
