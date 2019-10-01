@@ -10,16 +10,10 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #   A data frame of lumped parameters calculated from theory
   
   pars    = as.data.frame(t(model$repar(param.as.double)))
-  #CL = with(pars, (keD*V1))
-  #TL0 = with(pars, ksynT*ksynL/(koff_TL/kon_TL*keT*(keL+kon_TL) - ksynT*koff_TL)) 
-  #L0 = with(pars, )
-  #T0 = with(pars, )
-  #TL0 = with(pars, T0*L0/Kss_TL)
-  #Tacc = with(pars,keT  /keDT)
-  Lss  = with(pars,ksynL/keL)
-  Ttot = with(pars,ksynT/keDT)
-  KssTL = with(pars,(koff_TL+keTL)/kon_TL)
-  KssDT = with(pars,(koff_DT+keDT)/kon_DT)
+  Lss     = with(pars,ksynL/keL)
+  Ttot    = with(pars,ksynT/keDT)
+  KssTL   = with(pars,(koff_TL+keTL)/kon_TL)
+  KssDT   = with(pars,(koff_DT+keDT)/kon_DT)
   
   
   #compute Ctrough
@@ -30,14 +24,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
   Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
   
-
-  #For KeTL ~= 0
+  #For KeTL != 0
   a = with(pars,keTL^2)
   b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
   c = with(pars, ksynL*ksynT)
   
-  TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a)
-  
+  #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) positive
   TL0_neg <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
   
   if (pars$keTL == 0) {
@@ -114,7 +106,7 @@ lumped.parameters.simulation = function(model           = model,
   #param.as.double = d$Value
   #names(param.as.double) = d$Parameter
   ev = eventTable(amount.units="nmol", time.units="days")
-  sample.points = c(seq(-7, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
+  sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
   sample.points = sort(sample.points)
   sample.points = unique(sample.points)
   ev$add.sampling(sample.points)
@@ -131,36 +123,44 @@ lumped.parameters.simulation = function(model           = model,
   out  = model$rxout(out)
   
   # Calculate initial condition
-  initial_state = out %>%
-    filter(time==0)
+  initial_state = out %>% filter(time==0)
   TL0 = initial_state$TL
-  T0 = initial_state$T
+  T0  = initial_state$T
+  L0  = initial_state$L
   
-  #TODO - think more about this code - it's jsut a bit confusing here.  Why - 3?  Why 10*?
-  idx_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
-  out_vec = out[which(round(10*out$time) %in% round(10*idx_vec)),]
-  time_idx = out_vec$time[which(out_vec$D == min(out_vec$D))]
+  #Calculate steady state
+  dose_times       = seq(0,tmax,by=tau)
+  t_last_dose      = dose_times[length(dose_times)]
+  id_last_dose     = which(out$time==t_last_dose)
+  id_last_troughss = id_last_dose-1
+  
+  t_penultimate_dose      = dose_times[length(dose_times)-1]
+  id_penultimate_dose     = which(out$time==t_penultimate_dose)
+  id_penultimate_troughss = id_penultimate_dose-1
   
   #time_idx = tmax - 0.1
-  TLss = out$TL[which(round(10*out$time) == round(10*time_idx))]
-  SCIM_sim = TLss/TL0
+  TLss = out$TL[id_last_dose]
+  Lss  = out$L[id_last_dose]
+  Dss  = out$D[id_last_dose]
   
-  Ttot_sim = out$Ttot[which(round(10*out$time) == round(10*time_idx))]
-  L_sim = out$L[which(round(10*out$time) == round(10*time_idx))]
-  D_sim = out$D[which(round(10*out$time) == round(10*time_idx))]
+  Ttotss = out$Ttot[id_last_dose] 
+  
+  TLss_prev = out$TL[id_penultimate_dose]
+  
+  SCIM = TLss/TL0
   
   lumped_parameters_sim = data.frame(
     TL0_sim = TL0,
     T0_sim = T0,
-    Ttot_sim = Ttot_sim,
-    L_sim = L_sim,
-    D_sim = D_sim,
-    SCIM_sim = SCIM_sim,
-    time_idx,
-    TLss,
-    stringsAsFactors = FALSE) #having one named sim will be helpful later on in Task01, Task02, etc.
-  
-  return(lumped_parameters_sim)
+    L0_sim = L0,
+    Ttot_sim = Ttotss,
+    L_sim = Lss,
+    D_sim = Dss,
+    SCIM_sim = SCIM,
+    time_last_dose = t_last_dose,
+    TLss_sim = TLss,
+    TLss_frac_change = (TLss-TLss_prev)/TLss, #can be used to check we're at steady state
+    stringsAsFactors = FALSE) 
 }
 
 # Theory + Simulation: Compare ----------------------------------------------------------------------------------

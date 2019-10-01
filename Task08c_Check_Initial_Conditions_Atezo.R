@@ -52,7 +52,7 @@ drug = drugs[1]
     param.as.double["Kss_DT"] = with(p,(koff_DT + keDT)/kon_DT)
     param.as.double["Kss_TL"] = with(p,(koff_TL + keTL)/kon_TL)
     
-  #solve the model
+#check initial conditions and parameters
     init1 = model1$init(param.as.double[model1$pin])
     init2 = model2$init(param.as.double[model2$pin])
     print(bind_rows(init1,init2))
@@ -61,8 +61,12 @@ drug = drugs[1]
     p21   = model2$repar(param.as.double[model2$pin])[model2$pode] #convert param2 back to param1
     print(bind_rows(p11,p21))
     
+#solve the model    
     out1  = model1$rxode$solve(model1$repar(param.as.double), ev, init1)
     out1  = model1$rxout(out1)
     
     out2  = model2$rxode$solve(model2$repar(param.as.double), ev, init2)
     out2  = model2$rxout(out2)
+    
+
+    
