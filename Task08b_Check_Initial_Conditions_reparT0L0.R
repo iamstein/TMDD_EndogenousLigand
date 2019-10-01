@@ -74,6 +74,7 @@ g = g + xgx_scale_y_log10()
 g = g + facet_wrap(~drug)
 g = g + geom_hline(data = out1, aes(yintercept = T0 ),color="purple",linetype="dashed",alpha=.5,size=2)
 g = g + geom_hline(data = out1, aes(yintercept = L0 ),color="purple",linetype="dashed",alpha=.5,size=2)
+g = g + ggtitle("Purple line is theory")
 print(g)
 
 ggsave("results/Task08b_init_check_reparT0L0.png",width=6,height=6)
