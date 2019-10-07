@@ -5,7 +5,7 @@ source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task07_Check_Repar.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
-model = ivsc_2cmt_RR_KeqT0L0(target = TRUE)
+model = ivsc_2cmt_RR_KeqT0L0()
 
 #Drug list to loop through for finding file names
 drugs_list = list("Pembro","VEGFR1","VEGFR2","Atezoli","Ramuc","Siltux","Tociliz") #ADD THIS LINE
@@ -95,9 +95,6 @@ i = 1
 #   as.data.frame() %>%
 #   setNames(drug)
 # #View(param.tablet)
-
-
-write.csv(all_params, file = "Task07_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%

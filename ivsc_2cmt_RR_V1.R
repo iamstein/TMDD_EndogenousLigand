@@ -1,7 +1,4 @@
-#target = presence of target
-#if TRUE, target is present
-#if FALSE, then target concentratinons are zero
-ivsc_2cmt_RR_v1 = function(target = TRUE) {
+ivsc_2cmt_RR_v1 = function() {
   model           = list()
   model$name = 'ivsc_2cmt_DTL'
   
@@ -14,15 +11,16 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
     if (p$keTL == 0) {
       TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
       T0  = with(p,ksynT/keT)
+      L0  = with(p,ksynL/keL)
     } else {
       a = with(p,keTL^2)
       b = with(p,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
       c = with(p, ksynL*ksynT)
       
-      TL0 <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
-      T0 = with(p,(ksynT - keTL*TL0)/keT)
+      TL0 = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+      T0  = with(p,(ksynT - keTL*TL0)/keT)
+      L0 =  with(p,(ksynL - keTL*TL0)/keL)
     }    
-    L0 = with(p,(ksynL + koff_TL*TL0)/(kon_TL*T0 + keL))
     
     init = c(AmtD0=0,
              AmtD=0,
@@ -72,7 +70,7 @@ ivsc_2cmt_RR_v1 = function(target = TRUE) {
 }
 
 
-ivsc_2cmt_RR_KeqT0L0 = function(target = TRUE) {
+ivsc_2cmt_RR_KeqT0L0 = function() {
   model           = ivsc_2cmt_RR_v1()
   model$name      = 'ivsc_2cmt_DTL'
   
@@ -81,13 +79,29 @@ ivsc_2cmt_RR_KeqT0L0 = function(target = TRUE) {
   #CALCULATE INITIAL CONDITION WITH NO DRUG PRESENT AND ASSUMING STEADY STATE
   model$init      = function(p){
     p    = p %>% t() %>% as.data.frame()
+
+    # more complex formula for L0
+    # p     = mutate(p,
+    #                koff_TL = Kss_TL*kon_TL - keTL,
+    #                koff_DT = Kss_DT*kon_DT - keDT,
+    #                ksynT   = T0*keT + keTL*TL0,
+    #                ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+    # 
+    # if (p$keTL == 0) {
+    #   TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
+    # } else {
+    #   TL0 <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+    # }    
+    
+    TL0 = with(p,T0*L0/Kss_TL)
+    
     init = c(AmtD0 = 0,
              AmtD  = 0,
              AmtD2 = 0,
              T     = p$T0,
              DT    = 0,
              L     = p$L0,
-             TL    = with(p,T0*L0/Kss_TL))
+             TL    = TL0)
     
     return(init)
   }
@@ -100,8 +114,8 @@ ivsc_2cmt_RR_KeqT0L0 = function(target = TRUE) {
     p     = as.data.frame(as.list(p))
     TL0   = with(p,T0*L0/Kss_TL)
     p     = mutate(p,
-                   koff_TL = Kss_TL*kon_TL + keTL,
-                   koff_DT = Kss_DT*kon_DT + keDT,
+                   koff_TL = Kss_TL*kon_TL - keTL,
+                   koff_DT = Kss_DT*kon_DT - keDT,
                    ksynT   = T0*keT + keTL*TL0,
                    ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
     return(unlist(p))

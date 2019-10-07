@@ -1,24 +1,3 @@
-# Helper function that returns a range of variable when performing sensitvity analysis  -----------------------------------------------------
-read.param.file = function(filename) {
-  d                      = read_excel(filename, 1)
-  param.as.double        = suppressWarnings(as.numeric(d$Value))
-  names(param.as.double) = d$Parameter
-  param.as.double        = param.as.double[model$pin] #keep only parameters used in ODE
-}
-
-lseq = function(from, to, length.out){
-  # Arguments:
-  #   from : initial value of the variable
-  #   to : teminal value of the variable
-  #   length.out : fold number of <to - from>
-  # Return :
-  #   A vector of length <length.out>
-  
-  sequence = seq(log(from), log(to), length.out=length.out)
-  sequence = exp(sequence)
-  return(sequence)
-}
-
 # Theory #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
@@ -31,17 +10,13 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #   A data frame of lumped parameters calculated from theory
   
   pars    = as.data.frame(t(model$repar(param.as.double)))
-  #CL = with(pars, (keD*V1))
-  #TL0 = with(pars, ksynT*ksynL/(koff_TL/kon_TL*keT*(keL+kon_TL) - ksynT*koff_TL)) 
-  #L0 = with(pars, )
-  #T0 = with(pars, )
-  #TL0 = with(pars, T0*L0/Kss_TL)
-  #Tacc = with(pars,keT  /keDT)
-  Lss  = with(pars,ksynL/keL)
-  Ttot = with(pars,ksynT/keDT)
-  KssTL = with(pars,(koff_TL+keTL)/kon_TL)
-  KssDT = with(pars,(koff_DT+keDT)/kon_DT)
+  Lss     = with(pars,ksynL/keL)
+  Ttotss  = with(pars,ksynT/keDT)
   
+  if (!("Kss_TL" %in% names(pars))) {
+    Kss_TL   = with(pars,(koff_TL+keTL)/kon_TL)
+    Kss_DT   = with(pars,(koff_DT+keDT)/kon_DT)
+  }
   
   #compute Ctrough
   dose = dose.nmol
@@ -51,59 +26,61 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
   Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
   
-
-  #For KeTL ~= 0
-  a = with(pars,keTL^2)
-  b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
-  c = with(pars, ksynL*ksynT)
-  
-  TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a)
-  
-  TL0_neg <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
-  
+  #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) 
   if (pars$keTL == 0) {
-    T0 = with(pars,ksynT/keT)
+    T0    = with(pars,ksynT/keT)
+    TL0   = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
+    Tfold = Ttotss/T0
+    
+    SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
+    SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
+    SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
+    #SCIM_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keTL0)))
+
+    #SCIM_thy          = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    #SCIM_thy_simpler  = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    #SCIM_thy_simplest = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    
   } else {
-    T0 = with(pars,(ksynT - keTL*TL0_neg)/keT)
+    a = with(pars,keTL^2)
+    b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
+    c = with(pars, ksynL*ksynT)
+
+    TL0   = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+    T0    = with(pars,(ksynT - keTL*TL0)/keT)
+    Tfold = Ttotss/T0
+    
+    #SCIM_thy = with(pars,Ttotss/TL0 * 1/(Kss_TL/Kss_DT*Dss/Lss + Kss_TL/Lss + 1))
+    SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
+    SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
+    SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
+    
+    
+    #SCIM_thy          = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0))
+    #SCIM_thy_simpler  = with(pars,Ttot/((((KssTL*keL/ksynL)*(Dss/KssDT)) +1) *TL0_neg) )
+    #SCIM_thy_simplest = with(pars,  Ttot/KssTL * Lss/TL0_neg * KssDT/Dss)
   }
   
   
-  SCIM_thy_ketl_pos = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_pos))
-  SCIM_thy_ketl_neg = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_neg))
+  #SCIM_thy_ketl_pos = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0_pos))
+  #SCIM_thy_ketl_neg_31 = with(pars, (ksynT*ksynL*KssDT) / (KssTL*keL*keDT*Dss*TL0_neg) ) #same as simplest
   
-  SCIM_thy_ketl_neg_26 = with(pars,Ttot/KssTL * Lss/TL0_neg * KssDT/Dss)
-  
-  SCIM_thy_ketl_neg_29 = with(pars,Ttot/( ( ((KssTL*keL/ksynL)*(Dss/KssDT)) +1) *TL0_neg) )
-  
-  SCIM_thy_ketl_neg_31 = with(pars, (ksynT*ksynL*KssDT) / (KssTL*keL*keDT*Dss*TL0_neg) )
-  
-  Tacc     = Ttot/T0
-  AFIR_thy = with(pars,(KssDT*Tacc)/(Dss+Tacc))
-  
-  TL0_keTL0 = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
-  
-  SCIM_thy_keTL0 = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keTL0)))
-  AFIR_thy_simple = with(pars,(KssDT*(Ttot/T0))/Dss)
+  AFIR        = with(pars,(Kss_DT*Tfold)/(Dss+Tfold*Kss_DT))
+  AFIR_simple = with(pars,(Kss_DT*Tfold)/Dss)
   
   lumped_parameters_theory = data.frame(
-    TL0_keTL0_thy = TL0_keTL0,
-    TL0_negroot_thy = TL0_neg,
-    TL0_posroot_thy = TL0_pos,
     T0_thy = T0,
-    Ttot_thy = Ttot,
+    Ttotss_thy = Ttotss,
     Lss_thy = Lss,
     Dss_thy = Dss,
-    SCIM_thy_keTL0        = SCIM_thy_keTL0,
-    # Compare simplified SCIM eqns. 
-    # SCIM_thy_keTL_negroot is the most complex i.e not simplified version of SCIM
-    # 26, 29, and 31 refer to the eqn numbers in the latex doc. for the simplified SCIMs
-    SCIM_thy_keTL_negroot = SCIM_thy_ketl_neg,
-    SCIM_thy_keTL_negroot26 = SCIM_thy_ketl_neg_26,
-    SCIM_thy_keTL_negroot29 = SCIM_thy_ketl_neg_29,
-    SCIM_thy_keTL_negroot31 = SCIM_thy_ketl_neg_31,
-    SCIM_thy_keTL_posroot = SCIM_thy_ketl_pos,
-    AFIR_thy = AFIR_thy,
-    AFIR_thy_simple = AFIR_thy_simple,
+
+    AFIR_thy          = AFIR,
+    AFIR_simple_thy   = AFIR_simple,
+    
+    SCIM_thy          = SCIM,
+    SCIM_simpler_thy  = SCIM_simpler,
+    SCIM_simplest_thy = SCIM_simplest,
+    
     stringsAsFactors = FALSE
   )
   return(lumped_parameters_theory)
@@ -135,16 +112,16 @@ lumped.parameters.simulation = function(model           = model,
   #param.as.double = d$Value
   #names(param.as.double) = d$Parameter
   ev = eventTable(amount.units="nmol", time.units="days")
-  sample.points = c(seq(-7, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
+  sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
   sample.points = sort(sample.points)
   sample.points = unique(sample.points)
   ev$add.sampling(sample.points)
   
   #add dur  tau for a long infusion
   if (infusion == FALSE) {
-    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment)
+    ev$add.dosing(dose=dose.nmol, start.time = tau, nbr.doses=floor(tmax/tau), dosing.interval=tau, dosing.to=compartment)
   } else {
-    ev$add.dosing(dose=dose.nmol, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
+    ev$add.dosing(dose=dose.nmol, start.time = tau, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
   }  
   
   init = model$init(param.as.double)
@@ -152,36 +129,52 @@ lumped.parameters.simulation = function(model           = model,
   out  = model$rxout(out)
   
   # Calculate initial condition
-  initial_state = out %>%
-    filter(time==0)
+  initial_state = out %>% filter(time==0)
   TL0 = initial_state$TL
-  T0 = initial_state$T
+  T0  = initial_state$T
+  L0  = initial_state$L
   
-  #TODO - think more about this code - it's jsut a bit confusing here.  Why - 3?  Why 10*?
-  idx_vec = seq((floor(tmax/tau) - 3)*tau, tmax, 0.1)
-  out_vec = out[which(round(10*out$time) %in% round(10*idx_vec)),]
-  time_idx = out_vec$time[which(out_vec$D == min(out_vec$D))]
+  #Calculate steady state
+  dose_times       = seq(0,tmax,by=tau)
+  t_last_dose      = dose_times[length(dose_times)]
+  id_last_dose     = which(out$time==t_last_dose)
+  id_last_troughss = id_last_dose-1
+  
+  t_penultimate_dose      = dose_times[length(dose_times)-1]
+  id_penultimate_dose     = which(out$time==t_penultimate_dose)
+  id_penultimate_troughss = id_penultimate_dose-1
   
   #time_idx = tmax - 0.1
-  TLss = out$TL[which(round(10*out$time) == round(10*time_idx))]
-  SCIM_sim = TLss/TL0
+  TLss = out$TL[id_last_troughss]
+  Lss  = out$L[id_last_troughss]
+  Dss  = out$D[id_last_troughss]
+  Tss  = out$T[id_last_troughss]
   
-  Ttot_sim = out$Ttot[which(round(10*out$time) == round(10*time_idx))]
-  L_sim = out$L[which(round(10*out$time) == round(10*time_idx))]
-  D_sim = out$D[which(round(10*out$time) == round(10*time_idx))]
+  Ttotss = out$Ttot[id_last_troughss] 
+  TLss_prev = out$TL[id_penultimate_troughss]
+  
+  #first dose is at tau - this is half way to tau.  
+  #it's meant for a check, to make sure we start at steady state
+  id_05tau  = which.min((out$time-tau/2)^2)
+  TL05tau   = out$TL[id_05tau] 
+  
+  SCIM = TLss/TL0
+  AFIR = Tss/T0
   
   lumped_parameters_sim = data.frame(
     TL0_sim = TL0,
     T0_sim = T0,
-    Ttot_sim = Ttot_sim,
-    L_sim = L_sim,
-    D_sim = D_sim,
-    SCIM_sim = SCIM_sim,
-    time_idx,
-    TLss,
-    stringsAsFactors = FALSE) #having one named sim will be helpful later on in Task01, Task02, etc.
-  
-  return(lumped_parameters_sim)
+    L0_sim = L0,
+    Ttotss_sim = Ttotss,
+    L_sim = Lss,
+    D_sim = Dss,
+    AFIR_sim = AFIR,
+    SCIM_sim = SCIM,
+    time_last_dose = t_last_dose,
+    TLss_sim = TLss,
+    TLss_frac_change = (TLss-TLss_prev)/TLss, #can be used to check we're at steady state
+    TL0_05tau_frac_change = (TL05tau-TL0)/TL0,
+    stringsAsFactors = FALSE) 
 }
 
 # Theory + Simulation: Compare ----------------------------------------------------------------------------------

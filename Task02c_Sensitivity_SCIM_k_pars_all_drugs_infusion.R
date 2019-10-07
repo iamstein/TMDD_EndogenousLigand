@@ -5,7 +5,7 @@ source("ivsc_2cmt_RR_V1.R")
 dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
-model = ivsc_2cmt_RR_v1(target = TRUE)
+model = ivsc_2cmt_RR_v1()
 
 #Drug list to loop through for finding file names
 drugs_list = list("Pembro","VEGFR1","VEGFR2","Atezoli","Ramuc","Siltux","Tociliz") #ADD THIS LINE
