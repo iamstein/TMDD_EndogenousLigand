@@ -139,13 +139,13 @@ lumped.parameters.simulation = function(model           = model,
   id_penultimate_troughss = id_penultimate_dose-1
   
   #time_idx = tmax - 0.1
-  TLss = out$TL[id_last_dose]
-  Lss  = out$L[id_last_dose]
-  Dss  = out$D[id_last_dose]
+  TLss = out$TL[id_last_troughss]
+  Lss  = out$L[id_last_troughss]
+  Dss  = out$D[id_last_troughss]
   
-  Ttotss = out$Ttot[id_last_dose] 
+  Ttotss = out$Ttot[id_last_troughss] 
   
-  TLss_prev = out$TL[id_penultimate_dose]
+  TLss_prev = out$TL[id_penultimate_troughss]
   
   SCIM = TLss/TL0
   
