@@ -136,14 +136,15 @@ ivsc_2cmt_RR_KdT0L0 = function() {
   
   #PARAMEETRS IN MODEL
   model$pode       =  c('F','ka','V1', 'k12','k21','ksynT','ksynL','keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','koff_DT','kon_TL','koff_TL'); #ode parameters
-  model$pin        =  c('F','ka','V1', 'k12','k21','T0'   ,'L0'   ,'keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','Kd_DT'  ,'kon_TL','Kd_TL  '); #input parameters
+  model$pin        =  c('F','ka','V1', 'k12','k21','T0'   ,'L0'   ,'keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','Kd_DT'  ,'kon_TL','Kd_TL'); #input parameters
   
   model$repar = function(p) {
     p     = as.data.frame(as.list(p))
+    Kss_TL= with(p,Kd_TL + keTL/kon_TL)
     TL0   = with(p,T0*L0/Kss_TL)
     p     = mutate(p,
                    koff_TL = Kd_TL*kon_TL,
-                   koff_DT = Kd*kon_DT,
+                   koff_DT = Kd_DT*kon_DT,
                    ksynT   = T0*keT + keTL*TL0,
                    ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
     return(unlist(p))

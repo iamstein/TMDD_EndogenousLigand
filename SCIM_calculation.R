@@ -12,11 +12,10 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   pars    = as.data.frame(t(model$repar(param.as.double)))
   Lss     = with(pars,ksynL/keL)
   Ttotss  = with(pars,ksynT/keDT)
-  
-  if (!("Kss_TL" %in% names(pars))) {
-    Kss_TL   = with(pars,(koff_TL+keTL)/kon_TL)
-    Kss_DT   = with(pars,(koff_DT+keDT)/kon_DT)
-  }
+
+  Kss_TL = with(pars,(koff_TL + keTL)/kon_TL)
+  Kss_DT = with(pars,(koff_DT + keDT)/kon_DT)
+
   
   #compute Ctrough
   dose = dose.nmol
@@ -35,11 +34,12 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
     SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
     SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
-    #SCIM_thy = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0_keTL0)))
+    
+    #SCIM = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
 
-    #SCIM_thy          = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
-    #SCIM_thy_simpler  = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
-    #SCIM_thy_simplest = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    #SCIM          = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    #SCIM_simpler  = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
+    #SCIM_simplest = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
     
   } else {
     a = with(pars,keTL^2)
@@ -50,15 +50,17 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     T0    = with(pars,(ksynT - keTL*TL0)/keT)
     Tfold = Ttotss/T0
     
-    #SCIM_thy = with(pars,Ttotss/TL0 * 1/(Kss_TL/Kss_DT*Dss/Lss + Kss_TL/Lss + 1))
     SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
     SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
     SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
     
     
-    #SCIM_thy          = with(pars,Ttot/((((KssTL*Dss*keL)/(KssDT*ksynL))+((KssTL*keL)/(ksynL))+1)*TL0))
+    #SCIM          = with(pars,Ttotss/((((Kss_TL*Dss*keL)/(Kss_DT*ksynL))+((Kss_TL*keL)/(ksynL))+1)*TL0))
     #SCIM_thy_simpler  = with(pars,Ttot/((((KssTL*keL/ksynL)*(Dss/KssDT)) +1) *TL0_neg) )
     #SCIM_thy_simplest = with(pars,  Ttot/KssTL * Lss/TL0_neg * KssDT/Dss)
+    
+    #SCIM_thy = with(pars,Ttotss/TL0 * 1/(Kss_TL/Kss_DT*Dss/Lss + Kss_TL/Lss + 1))
+    
   }
   
   
