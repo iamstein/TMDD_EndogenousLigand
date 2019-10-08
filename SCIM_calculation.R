@@ -228,21 +228,19 @@ compare.thy.sim = function(model                 = model,
   
   #store final results in data.frame    
   df_thy = bind_rows(df_thy) %>% mutate(param.to.change = param.to.change.range)
-  df_sim = bind_rows(df_sim) %>% mutate(param.to.change = param.to.change.range)
-  
-  if (param.to.change == 'dose'){
-    df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/dose.original)
-    df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/dose.original)
-  } else {
-    df_sim = df_sim %>% mutate(fold.change.param = param.to.change.range/param.original)
-    df_thy = df_thy %>% mutate(fold.change.param = param.to.change.range/param.original)
-  }
+  df_sim = bind_rows(df_sim) #%>% mutate(param.to.change = param.to.change.range)
   
   # Arrange theory and simulation in single data frame.
   df_compare = bind_cols(df_thy,df_sim)
   df_compare = df_compare %>%
     mutate(param = param.to.change.name) %>%
     mutate_if(is.numeric,signif,6)
+  
+  if (param.to.change == 'dose'){
+    df_compare = df_compare %>% mutate(fold.change.param = param.to.change.range/dose.original)
+  } else {
+    df_compare = df_compare %>% mutate(fold.change.param = param.to.change.range/param.original)
+  }
   
   return(df_compare)
 }
