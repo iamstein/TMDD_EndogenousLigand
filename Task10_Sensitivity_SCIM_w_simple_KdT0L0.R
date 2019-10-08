@@ -2,33 +2,13 @@ source("ams_initialize_script.R")
 #rxSetIni0(FALSE)
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$Rscript.name = "Task09_Sensitivity_SCIM_w_simple.R"
+dirs$Rscript.name = "Task10_Sensitivity_SCIM_w_simple_KssT0L0.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_KeqT0L0()
 
-#Drug list to loop through for finding file names
-drugs_list = list("Pembro","VEGFR1","VEGFR2","Atezoli","Ramuc","Siltux","Tociliz") #ADD THIS LINE
-
-dfs = data.frame() #ADD THIS LINE
-
-# Create paths to data files for each drug.
-param = NULL #ADD THIS LINE
-i = 1 #ADD THIS LINE
-#Get params for all the drugs
-for (drugs in drugs_list) { #ADD THIS LOOP
-  
-  filename = list.files(path = "parameters/",pattern = drugs) #change filename line to this
-  if (length(filename)>1)
-    stop("check and see if you have any temp files open or something.  maybe close excel")
-  
-  param[[i]] = paste0("parameters/",filename)
-  i = i+1
-}
-
 # List of parameters of interest.
 parameters = c("ksynT", "keDT","koff_TL", "kon_TL", "koff_DT","kon_DT")
-
 
 # Dose time, frequency, compartment, nominal dose
 tmax = 52*7 #days
@@ -38,15 +18,15 @@ dose.nmol = 100*scale.mpk2nmol
 
 param.list = list()
 all_params <- data.frame() #ADD THIS LINE
-for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
+for (i in 1:length(drugs)){ #loop over all the drugs in the list
   
-
+  drug = drugs[i]
   # Load parameters.
-  param.as.double =  read.param.file(param[i]) #ADD THIS LINE (CHANGED VARIABLE NAME TO PARAM)
+  param.as.double =  read.param.file(parameter_files[i]) #ADD THIS LINE (CHANGED VARIABLE NAME TO PARAM)
   df_param =  as.data.frame(t(param.as.double))
   
   param.list[[i]] = data.frame(t(param.as.double)) %>%
-    mutate(drug = drugs_list[[i]]) %>%
+    mutate(drug = drug) %>%
     dplyr::select(drug,everything())
   
   # Set range for parameters of interest in SA.

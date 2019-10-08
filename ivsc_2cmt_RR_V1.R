@@ -70,7 +70,7 @@ ivsc_2cmt_RR_v1 = function() {
 }
 
 
-ivsc_2cmt_RR_KeqT0L0 = function() {
+ivsc_2cmt_RR_KssT0L0 = function() {
   model           = ivsc_2cmt_RR_v1()
   model$name      = 'ivsc_2cmt_DTL'
   
@@ -79,19 +79,6 @@ ivsc_2cmt_RR_KeqT0L0 = function() {
   #CALCULATE INITIAL CONDITION WITH NO DRUG PRESENT AND ASSUMING STEADY STATE
   model$init      = function(p){
     p    = p %>% t() %>% as.data.frame()
-
-    # more complex formula for L0
-    # p     = mutate(p,
-    #                koff_TL = Kss_TL*kon_TL - keTL,
-    #                koff_DT = Kss_DT*kon_DT - keDT,
-    #                ksynT   = T0*keT + keTL*TL0,
-    #                ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
-    # 
-    # if (p$keTL == 0) {
-    #   TL0 = with(p,kon_TL*ksynT*ksynL/(koff_TL*keL*keT))
-    # } else {
-    #   TL0 <- ((-b) -sqrt((b^2)-4*a*c))/(2*a)
-    # }    
     
     TL0 = with(p,T0*L0/Kss_TL)
     
@@ -123,3 +110,43 @@ ivsc_2cmt_RR_KeqT0L0 = function() {
   return(model)
 }
 
+
+ivsc_2cmt_RR_KdT0L0 = function() {
+  model           = ivsc_2cmt_RR_v1()
+  model$name      = 'ivsc_2cmt_DTL'
+  
+  #COMPARTMENTS
+  model$cmtshort  = c('AmtD0','AmtD','AmtD2','T','DT','L','LT')
+  #CALCULATE INITIAL CONDITION WITH NO DRUG PRESENT AND ASSUMING STEADY STATE
+  model$init      = function(p){
+    p       = p %>% t() %>% as.data.frame()
+    Kss_TL  = p$Kd_TL + p$keTL/p$kon_TL
+    TL0     = with(p,T0*L0/Kss_TL)
+    
+    init = c(AmtD0 = 0,
+             AmtD  = 0,
+             AmtD2 = 0,
+             T     = p$T0,
+             DT    = 0,
+             L     = p$L0,
+             TL    = TL0)
+    
+    return(init)
+  }
+  
+  #PARAMEETRS IN MODEL
+  model$pode       =  c('F','ka','V1', 'k12','k21','ksynT','ksynL','keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','koff_DT','kon_TL','koff_TL'); #ode parameters
+  model$pin        =  c('F','ka','V1', 'k12','k21','T0'   ,'L0'   ,'keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','Kd_DT'  ,'kon_TL','Kd_TL  '); #input parameters
+  
+  model$repar = function(p) {
+    p     = as.data.frame(as.list(p))
+    TL0   = with(p,T0*L0/Kss_TL)
+    p     = mutate(p,
+                   koff_TL = Kd_TL*kon_TL,
+                   koff_DT = Kd*kon_DT,
+                   ksynT   = T0*keT + keTL*TL0,
+                   ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+    return(unlist(p))
+  }
+  return(model)
+}
