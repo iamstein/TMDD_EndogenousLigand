@@ -92,7 +92,7 @@ param.tablet = param.table %>%
 #View(param.tablet)
 
 
-write.csv(all_params, file = "Task04.csv")
+write.csv(all_params, file = "results/Task04.csv")
 
 data.plot <- all_params %>%
   dplyr::select(fold.change.param, 

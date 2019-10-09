@@ -18,7 +18,7 @@ param_minmax = param_minmax.in %>%
 rownames(param_minmax) = param_minmax$Parameter
 
 #get a latin hyper cube of random variables
-n_samples = 0.3e6
+n_samples = 1e4
 n_param   = nrow(param_minmax)
 
 x       = lhs::randomLHS(n_samples,n_param)
@@ -41,7 +41,7 @@ start_time = Sys.time()
 result = list()
 for (i in 1:n_samples) {
   if  ((i %% 100) == 1) {
-    cat(paste("run ",i-1," of ", n_samples, "_", Sys.time(), "\n"))
+    cat(paste("run ",i-1," of ", n_samples, "-" , Sys.time(), "\n"))
   }
   param.as.double = param[i,] %>%
     as.numeric()
@@ -60,9 +60,9 @@ for (i in 1:n_samples) {
   #create result table
   result[[i]] = bind_cols(sim,thy,par)
   
-  if (i %% 1e5) {
-    filename = paste0(dirs$filename_prefix,Sys.Date(),"_",i/1e3,"e3")
-    write.csv(result,)
+  if (((i %% 1e5) == 0) || (i==n_samples)) {
+    filename = paste0("results/",dirs$filename_prefix,Sys.Date(),"_",i/1e3,"e3.csv")
+    write.csv(bind_rows(result),filename,quote = FALSE, row.names = FALSE)
   }
 }
 stop_time = Sys.time()
@@ -74,10 +74,8 @@ print(total_duration)
 cat("Time per run:")
 cat(paste0(signif(as.numeric(total_duration/n_samples, units = "secs"),2), " sec\n"))
 
-
-
 results = bind_rows(result)
-write.csv(results, file = "Task11_Latin_Hyper_Cube_Sample.R")
+write.csv(results, file = "results/Task11_Latin_Hyper_Cube_Sample.csv", row.names = FALSE, quote = FALSE)
 
 #check the initial condition and steady state ----
 check = results %>%

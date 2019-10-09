@@ -10,8 +10,9 @@ model = ivsc_2cmt_RR_KdT0L0()
 param_minmax.in = readxl::read_excel("parameters/Task10_Param_Ranges.xlsx")
 param_minmax = param_minmax.in %>%
   as.data.frame() %>%
-  select(Parameter,min,max,units) %>%
-  filter(!(Parameter %in% c("Css","CL","tau")))
+  select(Parameter,min,max,units,fixed) %>%
+  filter(!(is.na(fixed))) %>%
+  filter(fixed==0)
 rownames(param_minmax) = param_minmax$Parameter
 
 # Dose time, frequency, compartment, nominal dose
@@ -21,7 +22,8 @@ compartment = 2
 n_points = 10
 
 
-for (dose_original in c(10)) {
+for (dose_original in c(10)) 
+{
 
 
 result = list()
@@ -67,7 +69,7 @@ for (drug in drugs){ #loop over all the drugs in the list
   }
 }
 results = bind_rows(result)
-write.csv(results, file = "Task10_Sensitivity_SCIM_w_simple_KdT0L0.csv")
+write.csv(results, file = "results/Task10_Sensitivity_SCIM_w_simple_KdT0L0.csv")
 
 #check the initial condition and steady state ----
 check = results %>%

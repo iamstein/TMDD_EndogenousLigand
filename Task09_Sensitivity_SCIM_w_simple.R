@@ -78,7 +78,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
 }
 
 
-write.csv(all_params, file = "Task09_Sensitivity_SCIM_w_simple.csv")
+write.csv(all_params, file = "results/Task09_Sensitivity_SCIM_w_simple.csv")
 
 #plot results ----
 data.plot = all_params %>%
