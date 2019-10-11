@@ -18,7 +18,7 @@ param_minmax = param_minmax.in %>%
 rownames(param_minmax) = param_minmax$Parameter
 
 #get a latin hyper cube of random variables
-n_samples = 1e4
+n_samples = 1e2
 n_param   = nrow(param_minmax)
 
 x       = lhs::randomLHS(n_samples,n_param)
@@ -58,34 +58,38 @@ for (i in 1:n_samples) {
     mutate(id = i)
 
   #create result table
-  result[[i]] = bind_cols(sim,thy,par)
-  
+  result[[i]] = bind_cols(sim,thy,par) %>%
+    mutate(Cavgss = dose*scale.mpk2nmol/(CL*tau)) %>%
+    select(-c(TL0_sim, T0_sim, L0_sim, Ttotss_sim, L_sim , D_sim,  time_last_dose,
+                       T0_thy,         Ttotss_thy, Lss_thy,Dss_thy, 
+                       F, ka, CL, Q, V1, V2, keD, k12, k21, Vm, Km, tau)) %>%
+    select(id,everything())
+    
   if (((i %% 1e5) == 0) || (i==n_samples)) {
     filename = paste0("results/",dirs$filename_prefix,Sys.Date(),"_",i/1e3,"e3.csv")
-    write.csv(bind_rows(result),filename,quote = FALSE, row.names = FALSE)
+    results_save = result %>%
+      bind_rows() %>%
+      signif(digits = 3)
+    write.csv(results_save,filename,quote = FALSE, row.names = FALSE)
   }
 }
 stop_time = Sys.time()
-duration_per_run_sec = total_duration_min/n_samples
 cat("Total time: total_duration\n")
 total_duration = (stop_time-start_time)
 print(total_duration)
 
+duration_per_run_sec = total_duration/n_samples
 cat("Time per run:")
 cat(paste0(signif(as.numeric(total_duration/n_samples, units = "secs"),2), " sec\n"))
 
-results = bind_rows(result)
-write.csv(results, file = "results/Task11_Latin_Hyper_Cube_Sample.csv", row.names = FALSE, quote = FALSE)
-
 #check the initial condition and steady state ----
-check = results %>%
-  select(param_value, drug, param_name, TLss_frac_change, TL0_05tau_frac_change) %>%
-  gather(key,value,-c(param_value,drug,param_name)) %>%
+check = results_save %>%
+  select(TLss_frac_change, TL0_05tau_frac_change) %>%
+  gather() %>%
   mutate(value      = abs(value))
 
 g = ggplot(check,aes(value))
 g = g + geom_histogram()
 g = g + facet_wrap(~key, switch = "y", scales = "free_x")
 g = g + xgx_scale_x_log10()
-g = xgx_save(8,4,dirs,paste0("Check_Init_SteadyState_",dose_original,"mpk"),status = "")
 print(g)

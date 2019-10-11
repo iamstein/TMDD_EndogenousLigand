@@ -1,7 +1,8 @@
 # Theory #----------------------------------------------------------------------------------
 lumped.parameters.theory = function(param.as.double = param.as.double,
                                     dose.nmol       = dose.nmol,
-                                    tau             = tau){
+                                    tau             = tau, 
+                                    infusion        = FALSE){
   # Arguments:
   #   params_file_path: full path of the parameters file.
   #   dose.nmol: dosing amout in nmol
@@ -19,11 +20,17 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   #compute Ctrough
   dose = dose.nmol
-  alpha= with(pars, .5*(k12+k21+keD + sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
-  beta = with(pars, .5*(k12+k21+keD - sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
-  A    = with(pars, dose*(k21-alpha)/(V1*(beta-alpha)))
-  B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
-  Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
+  
+  if (infusion==FALSE) {
+    alpha= with(pars, .5*(k12+k21+keD + sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
+    beta = with(pars, .5*(k12+k21+keD - sqrt( (k12+k21+keD)^2 - 4*keD*k21)))
+    A    = with(pars, dose*(k21-alpha)/(V1*(beta-alpha)))
+    B    = with(pars, dose*(k21-beta) /(V1*(alpha-beta)))
+    Dss = (A*exp(-alpha*tau)/(1-exp(-alpha*tau)) + B*exp(-beta*tau)/(1-exp(-beta*tau)))
+  } else {
+    CL  = with(pars, keD*V1)
+    Dss = dose.nmol/(CL*tau)
+  }
   
   #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) 
   if (pars$keTL == 0) {
