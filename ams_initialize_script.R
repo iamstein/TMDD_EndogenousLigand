@@ -29,8 +29,15 @@ library(ggplot2)
 library(readr)
 library(readxl)
 #library(png)
-library(RxODE)
-library(xgxr)
+
+info = Sys.info()
+if (info["sysname"] == "Linux" & info["login"] == "steinanf") {
+  library(RxODE, lib = "./")
+  library(xgxr, lib = "./")
+} else {
+  library(RxODE)
+  library(xgxr)
+}
 
 
 #source additional key functions
