@@ -6,6 +6,8 @@ dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 library(lhs)
 
+n_samples = 1e6 #number of parameters sets to simulate
+
 model = ivsc_2cmt_RR_KdT0L0()
 
 #read in parameter ranges to explore
@@ -18,7 +20,6 @@ param_minmax = param_minmax.in %>%
 rownames(param_minmax) = param_minmax$Parameter
 
 #get a latin hyper cube of random variables
-n_samples = 1e4
 n_param   = nrow(param_minmax)
 
 x       = lhs::randomLHS(n_samples,n_param)
@@ -57,14 +58,16 @@ gg = gridExtra::arrangeGrob(g1,g2,nrow = 1, ncol = 2)
 gridExtra::grid.arrange(gg)
 
 # Run the simulations ----
-tmax = 52*7 #days
+tmax = 16*7 #days (for soluble target, 16 weeks should be long enough)
 tau  = param$tau[1]   #days
 compartment = 2
 infusion    = TRUE
 
 start_time = Sys.time()
 result = list()
-for (i in 1:n_samples) {
+
+#start at 30076 because there is an error and I want to confirm error checking works
+for (i in c(30076,1:n_samples)) { 
   if  ((i %% 100) == 1) {
     cat(paste("run ",i-1," of ", n_samples, "-" , Sys.time(), "\n"))
   }
@@ -72,10 +75,12 @@ for (i in 1:n_samples) {
     as.numeric()
   names(param.as.double) = names(param)
   dose.nmol       = as.numeric(param.as.double["dose_mpk"])*scale_mpk2nmol
-
-  sim = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, infusion = infusion)
-  thy = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau,              infusion = infusion)
   
+  
+  error_flag = 0
+  thy = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau,              infusion = infusion)
+  sim = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, tau, compartment, infusion = infusion)
+
   #all parameter values for the output table
   par = param.as.double %>% 
     t() %>% 
@@ -97,7 +102,10 @@ for (i in 1:n_samples) {
       signif(digits = 3)
     write.csv(results_save,filename,quote = FALSE, row.names = FALSE)
   }
-  if ((i %% 1e3)==0) {
+  
+  #plot a simulation after every n_sim simulations
+  n_sim = 500
+  if ((i %% n_sim)==0) {
     ev = eventTable(amount.units="nmol", time.units="days")
     sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
     sample.points = sort(sample.points)
@@ -122,8 +130,12 @@ for (i in 1:n_samples) {
     g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
     g = g + geom_line()
     g = g + geom_vline(xintercept = tau, linetype = "dotted")
+    g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
     g = g + xgx_scale_y_log10()
-    g = g + ggtitle(paste0("run ", i, ", AFIR_thy = ",signif(param$AFIR[i],2)))
+    g = g + ggtitle(paste0("run ", i, 
+                           "\nAFIR_thy  = ",signif(result[[i]]$AFIR_thy,2),
+                           "\nAFIR_sim  = ",signif(result[[i]]$AFIR_sim,2),
+                           "\nSCIM_sim = ",signif(result[[i]]$SCIM_sim,2)))
     print(g)
   }
 }

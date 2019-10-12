@@ -134,42 +134,55 @@ lumped.parameters.simulation = function(model           = model,
   }  
   
   init = model$init(param.as.double)
-  out  = model$rxode$solve(model$repar(param.as.double), ev, init)
-  out  = model$rxout(out)
   
-  # Calculate initial condition
-  initial_state = out %>% filter(time==0)
-  TL0 = initial_state$TL
-  T0  = initial_state$T
-  L0  = initial_state$L
+  error_simulation = FALSE
+  out = tryCatch({
+    model$rxode$solve(model$repar(param.as.double), ev, init)
+  }, error = function(e) {
+    data.frame(time = NA, D = NA, T = NA, DT = NA, L = NA, TL = NA)
+  })
   
-  #Calculate steady state
-  dose_times       = seq(0,tmax,by=tau)
-  t_last_dose      = dose_times[length(dose_times)]
-  id_last_dose     = which(out$time==t_last_dose)
-  id_last_troughss = id_last_dose-1
-  
-  t_penultimate_dose      = dose_times[length(dose_times)-1]
-  id_penultimate_dose     = which(out$time==t_penultimate_dose)
-  id_penultimate_troughss = id_penultimate_dose-1
-  
-  #time_idx = tmax - 0.1
-  TLss = out$TL[id_last_troughss]
-  Lss  = out$L[id_last_troughss]
-  Dss  = out$D[id_last_troughss]
-  Tss  = out$T[id_last_troughss]
-  
-  Ttotss = out$Ttot[id_last_troughss] 
-  TLss_prev = out$TL[id_penultimate_troughss]
-  
-  #first dose is at tau - this is half way to tau.  
-  #it's meant for a check, to make sure we start at steady state
-  id_05tau  = which.min((out$time-tau/2)^2)
-  TL05tau   = out$TL[id_05tau] 
-  
-  SCIM = TLss/TL0
-  AFIR = Tss/T0
-  
+  if (!is.na(out[1,"time"])) {
+    out  = model$rxout(out)
+    
+    # Calculate initial condition
+    initial_state = out %>% filter(time==0)
+    TL0 = initial_state$TL
+    T0  = initial_state$T
+    L0  = initial_state$L
+    
+    #Calculate steady state
+    dose_times       = seq(0,tmax,by=tau)
+    t_last_dose      = dose_times[length(dose_times)]
+    id_last_dose     = which(out$time==t_last_dose)
+    id_last_troughss = id_last_dose-1
+    
+    t_penultimate_dose      = dose_times[length(dose_times)-1]
+    id_penultimate_dose     = which(out$time==t_penultimate_dose)
+    id_penultimate_troughss = id_penultimate_dose-1
+    
+    #time_idx = tmax - 0.1
+    TLss = out$TL[id_last_troughss]
+    Lss  = out$L[id_last_troughss]
+    Dss  = out$D[id_last_troughss]
+    Tss  = out$T[id_last_troughss]
+    
+    Ttotss = out$Ttot[id_last_troughss] 
+    TLss_prev = out$TL[id_penultimate_troughss]
+    
+    #first dose is at tau - this is half way to tau.  
+    #it's meant for a check, to make sure we start at steady state
+    id_05tau  = which.min((out$time-tau/2)^2)
+    TL05tau   = out$TL[id_05tau] 
+    
+    SCIM = TLss/TL0
+    AFIR = Tss/T0
+  } else {
+    error_simulation = TRUE
+    TL0 = T0 = L0 = Ttotss = Lss = Dss = AFIR = SCIM = 
+      t_last_dose = TLss = TLss_frac_change = TL0_05tau_frac_change = 
+      TLss_prev = TL05tau = NA
+  }
   lumped_parameters_sim = data.frame(
     TL0_sim = TL0,
     T0_sim = T0,
@@ -183,6 +196,7 @@ lumped.parameters.simulation = function(model           = model,
     TLss_sim = TLss,
     TLss_frac_change = (TLss-TLss_prev)/TLss, #can be used to check we're at steady state
     TL0_05tau_frac_change = (TL05tau-TL0)/TL0,
+    error_simulation = error_simulation,
     stringsAsFactors = FALSE) 
 }
 

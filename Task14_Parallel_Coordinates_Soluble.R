@@ -73,7 +73,7 @@ data_plot = data_keep %>%
   gather(param,param_value,-c(id, AFIRthy_category, SCIMsim_category, AFIR_SCIM_sqerr,AFIR_SCIM_category)) %>%
   mutate(param = str_replace(param,"_tf",""))
 
-#sort by average param value in one category to help with visualization
+#sort by average param value in one category to help with visualization ----
 data_summ = data_plot %>%
   filter(AFIR_SCIM_category == "AFIRthy < 5%, SCIMsim < 5%") %>%
   group_by(param,AFIR_SCIM_category) %>%
@@ -89,7 +89,7 @@ data_plot = data_plot %>%
 g = ggplot(data_plot, aes(x=param,y=param_value, group = id))
 g = g + geom_line(alpha = 0.01)
 g = g + facet_grid(SCIMsim_category~AFIRthy_category,switch = "y")
-g = g + theme(axis.text.x = element_text(angle = 45))
+g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 g = g + labs(x = "Parameter", y = "Parameter Value")
 g = xgx_save(7,7,dirs,"Parallel_Coord_Soluble_3x3","")
 print(g)
@@ -101,7 +101,7 @@ data_plot_color = data_plot %>%
 g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, color = AFIR_SCIM_category))
 g = g + geom_line(alpha = 0.02)
 g = g + geom_point(alpha = 0.01)
-g = g + theme(axis.text.x = element_text(angle = 45))
+g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 g = g + scale_color_manual(values = c("red","blue"))
 g = g + theme(legend.position = "top", legend.direction = "vertical")
 g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
