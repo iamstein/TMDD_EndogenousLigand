@@ -1,7 +1,7 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$rscript_name = "Task13_LHS_Soluble.R"
+dirs$rscript_name = "Task14_Parallel_Coordinates_Soluble.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 
@@ -68,24 +68,44 @@ kable(data_summary)
 
 param2uniform = function(x) {(log(x) - log(min(x)))/(log(max(x))-log(min(x)))}
 data_plot = data_keep %>%
-  mutate_at(vars(AFIR:kon_TL), funs(tf=param2uniform(.))) %>%
-  select(id,AFIRthy_category, SCIMsim_category, AFIR_SCIM_sqerr, AFIR_SCIM_category, AFIR_tf:kon_TL_tf) %>%
+  mutate_at(vars(AFIR:kon_TL,dose_mpk), funs(tf=param2uniform(.))) %>%
+  select(id,AFIRthy_category, SCIMsim_category, AFIR_SCIM_sqerr, AFIR_SCIM_category, T0_tf:kon_TL_tf, dose_mpk_tf) %>%
   gather(param,param_value,-c(id, AFIRthy_category, SCIMsim_category, AFIR_SCIM_sqerr,AFIR_SCIM_category)) %>%
-  mutate(param = str_replace(param,"_tf","")) %>%
+  mutate(param = str_replace(param,"_tf",""))
+
+#sort by average param value in one category to help with visualization
+data_summ = data_plot %>%
+  filter(AFIR_SCIM_category == "AFIRthy < 5%, SCIMsim < 5%") %>%
+  group_by(param,AFIR_SCIM_category) %>%
+  summarise(x = mean(param_value)) %>%
+  arrange(x) %>%
+  ungroup()
+print(data_summ)
+
+data_plot = data_plot %>%
   mutate(param = factor(param, 
-                        levels = c("AFIR","T0","L0","kon_DT","kon_TL","Kd_DT","Kd_TL","keT","keDT","keL","Lfold")))
+                        levels = data_summ$param))
 
 g = ggplot(data_plot, aes(x=param,y=param_value, group = id))
 g = g + geom_line(alpha = 0.01)
 g = g + facet_grid(SCIMsim_category~AFIRthy_category,switch = "y")
 g = g + theme(axis.text.x = element_text(angle = 45))
+g = g + labs(x = "Parameter", y = "Parameter Value")
+g = xgx_save(7,7,dirs,"Parallel_Coord_Soluble_3x3","")
 print(g)
 
-#second plot - color
+#second plot - color ----
 data_plot_color = data_plot %>%
   filter(AFIR_SCIM_category %in% c("AFIRthy < 5%, SCIMsim < 5%","AFIRthy < 5%, SCIMsim > 30%"))
 
 g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, color = AFIR_SCIM_category))
-g = g + geom_line(alpha = 0.01)
+g = g + geom_line(alpha = 0.02)
+g = g + geom_point(alpha = 0.01)
 g = g + theme(axis.text.x = element_text(angle = 45))
+g = g + scale_color_manual(values = c("red","blue"))
+g = g + theme(legend.position = "top", legend.direction = "vertical")
+g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
+g = g + labs(x = "Parameter", y = "Parameter Value")
+g = xgx_save(4,4,dirs,"Parallel_Coord_Soluble_2","")
+print(g)
 
