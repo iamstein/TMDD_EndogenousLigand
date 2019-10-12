@@ -105,7 +105,7 @@ for (i in c(30076,1:n_samples)) {
   
   #plot a simulation after every n_sim simulations
   n_sim = 500
-  if ((i %% n_sim)==0) {
+  if ( ((i %% n_sim)==0) & (result[[i]]$error_simulation == FALSE) ) {
     ev = eventTable(amount.units="nmol", time.units="days")
     sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
     sample.points = sort(sample.points)
@@ -126,9 +126,11 @@ for (i in c(30076,1:n_samples)) {
     out_plot = out %>%
       select(time,D,T,DT,L,TL) %>%
       gather(cmt,value,-time)
+    out_last = out[length(out),]
     
     g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
     g = g + geom_line()
+    g = g + geom_label(data = out_last, aes(label = cmt))
     g = g + geom_vline(xintercept = tau, linetype = "dotted")
     g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
     g = g + xgx_scale_y_log10()
