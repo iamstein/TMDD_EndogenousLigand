@@ -76,11 +76,16 @@ data_plot = data_keep %>%
                         levels = c("AFIR","T0","L0","kon_DT","kon_TL","Kd_DT","Kd_TL","keT","keDT","keL","Lfold")))
 
 g = ggplot(data_plot, aes(x=param,y=param_value, group = id))
-g = g + geom_line(alpha = .01)
-#g = g + scale_color_gradient(low = "blue", high = "red", breaks = c(0,.25,.5,.75,1), limits = c(0,1))
+g = g + geom_line(alpha = 0.01)
 g = g + facet_grid(SCIMsim_category~AFIRthy_category,switch = "y")
 g = g + theme(axis.text.x = element_text(angle = 45))
-#g = g + scale_color_manual(values = c(low = "black", high = "red"))
-#g = g + scale_alpha_manual(values = c(low = .01,    high = 0.00))
 print(g)
+
+#second plot - color
+data_plot_color = data_plot %>%
+  filter(AFIR_SCIM_category %in% c("AFIRthy < 5%, SCIMsim < 5%","AFIRthy < 5%, SCIMsim > 30%"))
+
+g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, color = AFIR_SCIM_category))
+g = g + geom_line(alpha = 0.01)
+g = g + theme(axis.text.x = element_text(angle = 45))
 
