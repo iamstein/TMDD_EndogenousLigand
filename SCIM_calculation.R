@@ -39,6 +39,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     Tfold = Ttotss/T0
     
     SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
+    SCIM_adhoc   = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Tfold)
     SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
     SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
     
@@ -58,6 +59,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     Tfold = Ttotss/T0
     
     SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
+    SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
     SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
     SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
     
@@ -87,6 +89,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     AFIR_simple_thy   = AFIR_simple,
     
     SCIM_thy          = SCIM,
+    SCIM_adhoc_thy    = SCIM_adhoc,
     SCIM_simpler_thy  = SCIM_simpler,
     SCIM_simplest_thy = SCIM_simplest,
     
@@ -188,15 +191,15 @@ lumped.parameters.simulation = function(model           = model,
     T0_sim = T0,
     L0_sim = L0,
     Ttotss_sim = Ttotss,
-    L_sim = Lss,
-    D_sim = Dss,
+    Lss_sim = Lss,
+    Dss_sim = Dss,
     AFIR_sim = AFIR,
     SCIM_sim = SCIM,
     time_last_dose = t_last_dose,
     TLss_sim = TLss,
     TLss_frac_change = (TLss-TLss_prev)/TLss, #can be used to check we're at steady state
     TL0_05tau_frac_change = (TL05tau-TL0)/TL0,
-    error_simulation = error_simulation,
+    error_simulation = as.numeric(error_simulation),
     stringsAsFactors = FALSE) 
 }
 

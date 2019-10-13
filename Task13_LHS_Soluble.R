@@ -126,14 +126,15 @@ for (i in c(30076,1:n_samples)) {
     out_plot = out %>%
       select(time,D,T,DT,L,TL) %>%
       gather(cmt,value,-time)
-    out_last = out[length(out),]
+    out_last = out_plot[(out$time==max(out$time)),]
     
     g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
     g = g + geom_line()
-    g = g + geom_label(data = out_last, aes(label = cmt))
+    g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
     g = g + geom_vline(xintercept = tau, linetype = "dotted")
     g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
     g = g + xgx_scale_y_log10()
+    g = g + labs(y = "Concentration (nm)", color = "")
     g = g + ggtitle(paste0("run ", i, 
                            "\nAFIR_thy  = ",signif(result[[i]]$AFIR_thy,2),
                            "\nAFIR_sim  = ",signif(result[[i]]$AFIR_sim,2),

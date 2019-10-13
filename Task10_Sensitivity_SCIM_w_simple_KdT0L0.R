@@ -19,7 +19,9 @@ rownames(param_minmax) = param_minmax$Parameter
 tmax = 52*7 #days
 tau  = 21   #days
 compartment = 2
+infusion = FALSE
 n_points = 10
+
 
 
 for (dose_original in c(10)) 
@@ -50,7 +52,7 @@ for (drug in drugs){ #loop over all the drugs in the list
       #key lines for computing theory and simulation
       param.as.double = param_as_double
       dose.nmol       = dose_nmol
-      sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment)
+      sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment, infusion = infusion)
       thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau)
       
       #all parameter values for the output table
@@ -88,7 +90,7 @@ print(g)
 #plot results ----
 data_plot = results %>%
   select(param_value, drug, param_name, TLss_frac_change, TL0_05tau_frac_change,
-                SCIM_sim, SCIM_thy, AFIR_thy) %>%
+                SCIM_sim, AFIR_thy, SCIM_adhoc_thy) %>%
   gather(key,value,-c(drug,param_name,param_value,TLss_frac_change, TL0_05tau_frac_change)) %>%
   mutate(AFIR_SCIM  = ifelse(str_detect(key,"AFIR"),"AFIR","SCIM"),
          theory_sim = ifelse(str_detect(key,"sim"),"sim","thy"),
@@ -112,13 +114,15 @@ g = g + geom_line(size = 1, alpha = .5)
 g = g + geom_point(data = data_err0,  mapping = aes(x=param_value,y=value), color = "red")
 g = g + geom_point(data = data_errss, mapping = aes(x=param_value,y=value), color = "purple")
 g = g + facet_grid(drug ~ param_name,scales = "free", switch = "y") 
-g = g + xgx_scale_x_log10(breaks = c(1e-4,1e-2,1,100,1e4), minor_breaks = 1) 
-g = g + xgx_scale_y_log10(breaks = c(1e-4,1e-2,1,100,1e4), minor_breaks = 1)
+g = g + xgx_scale_x_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1) 
+g = g + xgx_scale_y_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1)
 g = g + scale_color_manual(values = c("AFIR_thy" = "red",
                                       "SCIM_sim" = "black",
+                                      "SCIM_adhoc_thy" = "green4",
                                       "SCIM_thy" = "blue"))
 g = g + scale_linetype_manual(values = c("AFIR_thy" = "dotted",
                                          "SCIM_sim" = "solid",
+                                         "SCIM_adhoc_thy" = "longdash",
                                          "SCIM_thy" = "dashed"))
 g = g + ggtitle(paste0("Dose = ",dose_original," mg/kg"))
 g = xgx_save(17,10,dirs,paste0("reparKdT0L0_",dose_original,"mpk"),status = "")
