@@ -102,3 +102,6 @@ g = g + ggtitle(paste0(  "AFIR_thy  = ",signif(results$AFIR_thy,2),
                        "\nAFIR_sim  = ",signif(results$AFIR_sim,2),
                        "\nSCIM_sim = ",signif(results$SCIM_sim,2)))
 print(g)
+
+print(results$Ttotss_sim)
+print(results$Ttotss_thy)
