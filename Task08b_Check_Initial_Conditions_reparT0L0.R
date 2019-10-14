@@ -5,7 +5,7 @@ dirs$Rscript.name = "Task08_Check_Initial_Conditions.R"
 dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
 
 #set up the model and dosing
-model  = ivsc_2cmt_RR_KeqT0L0()
+model  = ivsc_2cmt_RR_KssT0L0()
 #model1 = ivsc_2cmt_RR_KeqT0L0()
 
 # Dose time, frequency, compartment, nominal dose

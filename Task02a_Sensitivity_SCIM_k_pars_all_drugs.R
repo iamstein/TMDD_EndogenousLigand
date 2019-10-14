@@ -94,7 +94,7 @@ param.tablet = param.table %>%
 #View(param.tablet)
 
 
-write.csv(all_params, file = "Task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
+write.csv(all_params, file = "results/Task02a_sensitivity_all drugs and params_100_updated 04_24.csv")
 
 data.plot = all_params %>%
   dplyr::select(fold.change.param, SCIM_sim, SCIM_thy_keTL_negroot, SCIM_thy_keTL0, AFIR_thy, drug,param) %>%

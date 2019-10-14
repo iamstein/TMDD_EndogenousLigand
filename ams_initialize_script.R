@@ -66,22 +66,28 @@ drugs = c("Atezolizumab",
           "Siltuximab",
           "Tocilizumab")
 parameter_files = paste0("parameters/ModelG_",drugs,"_Params.xlsx")
+names(parameter_files) = drugs
 
 #flag for labeling figures as draft
 draft.flag           = FALSE
 print.filenames.flag = TRUE
 
 #set directories
-top = paste0(normalizePath("../"),"/")
+top = paste0(normalizePath("./"),"/")
 dirs= list(top.level         = top,
            Rscript.relative  = "./",
            results.relative  = "./results/",
-           results.relative.print = "./results/")
+           results.relative.print = "./results/",
+           parent_dir = top,
+           rscript_dir = "./",
+           results_dir = "./results/")
 
 #ggplot settings
 theme_set(theme_bw())
 
 #scaling params
 scale.mpk2nmol = 70*1e-3/150e3*1e9
+scale_mpk2nmol = scale.mpk2nmol
 scale.nmol2mpk = 1/scale.mpk2nmol #nM->mg/kg
+scale_nmol2mpk = scale.nmol2mpk
 scale.mg2nmol  = 1e-3/150e3*1e9

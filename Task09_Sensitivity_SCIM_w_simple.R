@@ -2,8 +2,8 @@ source("ams_initialize_script.R")
 #rxSetIni0(FALSE)
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$Rscript.name = "Task02a_Sensitivity_SCIM_k_pars.R"
-dirs$output.prefix= str_extract(dirs$Rscript.name,"^Task\\d\\d\\w?_")
+dirs$rscript_name = "Task09_Sensitivity_SCIM_w_simple.R"
+dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_v1()
 
@@ -42,7 +42,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
   
 
   # Load parameters.
-  param.as.double =  read.param.file(param[i]) #ADD THIS LINE (CHANGED VARIABLE NAME TO PARAM)
+  param.as.double =  read.param.file(param[i])[model$pin]
   df_param =  as.data.frame(t(param.as.double))
   
   param.list[[i]] = data.frame(t(param.as.double)) %>%
@@ -78,7 +78,7 @@ for (i in 1:length(drugs_list)){ #loop over all the drugs in the list
 }
 
 
-write.csv(all_params, file = "Task09_Sensitivity_SCIM_w_simple.csv")
+write.csv(all_params, file = "results/Task09_Sensitivity_SCIM_w_simple.csv")
 
 #plot results ----
 data.plot = all_params %>%
@@ -106,5 +106,19 @@ g = g + scale_y_log10()
 #                                          SCIM_thy_keTL0 = "dotted",
 #                                          SCIM_thy_keTL_negroot = "dashed",
 #                                          AFIR_thy = "solid"))
-
+g = xgx_save(8,8,dirs,"Compare_AFIR_SCIM","")
 print(g)
+
+#check the initial condition and steady state ----
+check = all_params %>%
+  select(fold.change.param, drug, param, TLss_frac_change, TL0_05tau_frac_change) %>%
+  gather(key,value,-c(fold.change.param,drug,param)) %>%
+  mutate(value      = abs(value))
+
+g = ggplot(check,aes(value))
+g = g + geom_histogram()
+g = g + facet_grid(drug~key, switch = "y")
+g = g + xgx_scale_x_log10()
+g = xgx_save(8,4,dirs,"Check_Init_SteadyState",status = "")
+print(g)
+
