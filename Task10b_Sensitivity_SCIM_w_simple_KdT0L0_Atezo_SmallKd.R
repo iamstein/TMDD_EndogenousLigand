@@ -100,8 +100,16 @@ g = g + xgx_scale_y_log10()
 g = g + labs(y = "Concentration (nm)", color = "")
 g = g + ggtitle(paste0(  "AFIR_thy  = ",signif(results$AFIR_thy,2),
                        "\nAFIR_sim  = ",signif(results$AFIR_sim,2),
-                       "\nSCIM_sim = ",signif(results$SCIM_sim,2)))
+                       "\nSCIM_sim = ",signif(results$SCIM_sim,2),
+                       "\nSCIM_thy = ",signif(results$SCIM_thy,2),
+                       "\nKd_TL = ",signif(results$Kd_TL,2)))
 print(g)
 
 print(results$Ttotss_sim)
 print(results$Ttotss_thy)
+
+print(results$Lss_sim)
+print(results$Lss_thy)
+
+print(results$Dss_sim)
+print(results$Dss_thy)

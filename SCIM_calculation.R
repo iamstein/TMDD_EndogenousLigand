@@ -12,7 +12,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   pars    = as.data.frame(t(model$repar(param.as.double)))
   Lss     = with(pars,ksynL/keL)
-  Ttotss  = with(pars,ksynT/keDT)
+  #Ttotss  = with(pars,ksynT/keDT) moved this into the if loop below
 
   Kss_TL = with(pars,(koff_TL + keTL)/kon_TL)
   Kss_DT = with(pars,(koff_DT + keDT)/kon_DT)
@@ -35,11 +35,15 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) 
   if (pars$keTL == 0) {
     T0    = with(pars,ksynT/keT)
-    TL0   = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
+    TL0   = with(pars, (T0*ksynL*kon_TL) / (koff_TL*keL)) # organized the terms
+    
+    #SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
+    SCIM        = with(pars, (ksynT/keDT) / (Kss_TL/Lss + (Kss_TL/Kss_DT)*(Dss/Lss) + 2 ) / TL0 ) # new SCIM without the TL ~ 0 assumption
+    Ttotss  = with(pars,ksynT/keDT - (TL0*SCIM) ) # check
     Tfold = Ttotss/T0
     
-    SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
-    SCIM_adhoc   = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Tfold)
+    SCIM_adhoc  = with(pars, (ksynT/keDT) / (Kss_TL/Lss + (Kss_TL/Kss_DT)*(Dss/Lss) + Tfold ) / TL0 ) # new SCIM without the TL ~ 0 assumption
+    #SCIM_adhoc   = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Tfold)
     SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
     SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
     
@@ -50,16 +54,19 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     #SCIM_simplest = with(pars, 1/(Kss_TL * Dss /(Lss*Kss_DT + Kss_TL/Lss + 1)*Ttotss/TL0))
     
   } else {
-    a = with(pars,keTL^2)
-    b = with(pars,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
+    a = with(pars, keTL^2)
+    b = with(pars, -(keTL) * (ksynT + ksynL) - (((koff_TL + keTL) / kon_TL) * keT * keL))
     c = with(pars, ksynL*ksynT)
-
     TL0   = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
     T0    = with(pars,(ksynT - keTL*TL0)/keT)
+    
+    #SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
+    SCIM         = with(pars, (ksynT/keDT) / (Kss_TL/Lss + (Kss_TL/Kss_DT)*(Dss/Lss) + keTL/keDT + 2 ) / TL0 ) # new SCIM without the TL ~ 0 assumption
+    Ttotss  = with(pars, (ksynT - (TL0*SCIM) *(keDT + keTL)) / keDT) # check
     Tfold = Ttotss/T0
     
-    SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
-    SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
+    SCIM_adhoc   = with(pars, (ksynT/keDT) / (Kss_TL/Lss + (Kss_TL/Kss_DT)*(Dss/Lss) + keTL/keDT + Ttotss/TL0 ) / TL0 ) # new SCIM without the TL ~ 0 assumption
+    #SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
     SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
     SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
     
@@ -81,6 +88,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   lumped_parameters_theory = data.frame(
     T0_thy = T0,
+    TL0_thy = TL0,
     Ttotss_thy = Ttotss,
     Lss_thy = Lss,
     Dss_thy = Dss,

@@ -128,5 +128,45 @@ g = g + ggtitle(paste0("Dose = ",dose_original," mg/kg"))
 g = xgx_save(17,10,dirs,paste0("reparKdT0L0_",dose_original,"mpk"),status = "")
 print(g)
 
+
+data_plot2 = results %>%
+  select(param_value, drug, param_name, TLss_frac_change, TL0_05tau_frac_change,
+         SCIM_sim, AFIR_thy, SCIM_thy) %>%
+  gather(key,value,-c(drug,param_name,param_value,TLss_frac_change, TL0_05tau_frac_change)) %>%
+  mutate(AFIR_SCIM  = ifelse(str_detect(key,"AFIR"),"AFIR","SCIM"),
+         theory_sim = ifelse(str_detect(key,"sim"),"sim","thy"),
+         approx     = str_extract(key,"_\\w+_"),
+         approx     = str_replace(approx,"_",""),
+         approx     = ifelse(is.na(approx),"none",approx))
+
+threshold = 0.05
+data_errss = data_plot2 %>%
+  filter(abs(TLss_frac_change)>=threshold) %>%
+  filter(theory_sim == "sim")
+print(paste0(nrow(data_errss),": Number of rows with TLss_frac_change > 0.1"))
+
+data_err0 = data_plot2 %>%
+  filter(abs(TL0_05tau_frac_change)>=threshold) %>%
+  filter(theory_sim == "sim")
+print(paste0(nrow(data_err0),": Number of rows with TL0_05tau_frac_change > 0.1"))
+
+g = ggplot(data_plot2, aes(x=param_value,y=value, color = key, linetype = key))
+g = g + geom_line(size = 1, alpha = .5) 
+g = g + geom_point(data = data_err0,  mapping = aes(x=param_value,y=value), color = "red")
+g = g + geom_point(data = data_errss, mapping = aes(x=param_value,y=value), color = "purple")
+g = g + facet_grid(drug ~ param_name,scales = "free", switch = "y") 
+g = g + xgx_scale_x_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1) 
+g = g + xgx_scale_y_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1)
+g = g + scale_color_manual(values = c("AFIR_thy" = "red",
+                                      "SCIM_sim" = "black",
+                                      "SCIM_adhoc_thy" = "green4",
+                                      "SCIM_thy" = "blue"))
+g = g + scale_linetype_manual(values = c("AFIR_thy" = "dotted",
+                                         "SCIM_sim" = "solid",
+                                         "SCIM_adhoc_thy" = "longdash",
+                                         "SCIM_thy" = "dashed"))
+g = g + ggtitle(paste0("Dose = ",dose_original," mg/kg"))
+g = xgx_save(17,10,dirs,paste0("reparKdT0L0_",dose_original,"mpk","thy"),status = "")
+print(g)
 # ----
 }

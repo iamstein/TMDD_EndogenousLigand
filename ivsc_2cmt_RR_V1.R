@@ -14,10 +14,10 @@ ivsc_2cmt_RR_v1 = function() {
       L0  = with(p,ksynL/keL)
     } else {
       a = with(p,keTL^2)
-      b = with(p,-(keTL) * (ksynT +ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
+      b = with(p,-(keTL) * (ksynT + ksynL) - (((koff_TL+keTL)/kon_TL) * keT *keL))
       c = with(p, ksynL*ksynT)
       
-      TL0 = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
+      TL0 = ( (-b) -sqrt((b^2)-4*a*c) ) / (2*a)
       T0  = with(p,(ksynT - keTL*TL0)/keT)
       L0 =  with(p,(ksynL - keTL*TL0)/keL)
     }    
@@ -104,7 +104,8 @@ ivsc_2cmt_RR_KssT0L0 = function() {
                    koff_TL = Kss_TL*kon_TL - keTL,
                    koff_DT = Kss_DT*kon_DT - keDT,
                    ksynT   = T0*keT + keTL*TL0,
-                   ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+                   #ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0) 
+                   ksynL   = L0*keL + keTL*TL0)
     return(unlist(p))
   }
   return(model)
@@ -121,7 +122,7 @@ ivsc_2cmt_RR_KdT0L0 = function() {
   model$init      = function(p){
     p       = p %>% t() %>% as.data.frame()
     Kss_TL  = p$Kd_TL + p$keTL/p$kon_TL
-    TL0     = with(p,T0*L0/Kss_TL)
+    TL0     = with(p, T0*L0/Kss_TL)
     
     init = c(AmtD0 = 0,
              AmtD  = 0,
@@ -140,13 +141,14 @@ ivsc_2cmt_RR_KdT0L0 = function() {
   
   model$repar = function(p) {
     p     = as.data.frame(as.list(p))
-    Kss_TL= with(p,Kd_TL + keTL/kon_TL)
-    TL0   = with(p,T0*L0/Kss_TL)
+    Kss_TL= with(p, Kd_TL + keTL/kon_TL)
+    TL0   = with(p, T0*L0/Kss_TL)
     p     = mutate(p,
                    koff_TL = Kd_TL*kon_TL,
                    koff_DT = Kd_DT*kon_DT,
                    ksynT   = T0*keT + keTL*TL0,
-                   ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+                   #ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0)
+                   ksynL   = L0*keL + keTL*TL0)
     return(unlist(p))
   }
   return(model)
