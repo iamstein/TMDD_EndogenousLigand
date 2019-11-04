@@ -24,7 +24,7 @@ n_points = 10
 
 
 
-for (dose_original in c(10)) 
+for (dose_original in c(10,100,1000)) 
 {
 
 
