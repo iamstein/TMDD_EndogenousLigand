@@ -4,7 +4,8 @@ source("ivsc_2cmt_RR_V1.R")
 dirs$rscript_name = "Task10_Sensitivity_SCIM_w_simple_KssT0L0.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
-model = ivsc_2cmt_RR_KdT0L0()
+#model = ivsc_2cmt_RR_KdT0L0()
+model = ivsc_2cmt_RR_v1()
 
 #read in parameter ranges to explore
 param_minmax.in = readxl::read_excel("parameters/Task10_Param_Ranges.xlsx")

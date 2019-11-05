@@ -135,7 +135,7 @@ ivsc_2cmt_RR_KdT0L0 = function() {
     return(init)
   }
   
-  #PARAMEETRS IN MODEL
+  #PARAMETERS IN MODEL
   model$pode       =  c('F','ka','V1', 'k12','k21','ksynT','ksynL','keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','koff_DT','kon_TL','koff_TL'); #ode parameters
   model$pin        =  c('F','ka','V1', 'k12','k21','T0'   ,'L0'   ,'keD','keT','keL','keDT','keTL', 'Vm','Km','kon_DT','Kd_DT'  ,'kon_TL','Kd_TL'); #input parameters
   

@@ -5,6 +5,8 @@ dirs$rscript_name = "Task10b_Sensitivity_SCIM_w_simple_KdT0L0_Atezo_SmallKd.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_KdT0L0()
+#model = ivsc_2cmt_RR_v1()
+#model = ivsc_2cmt_RR_KssT0L0()
 
 #read in parameter ranges to explore
 param_minmax.in = readxl::read_excel("parameters/Task10_Param_Ranges.xlsx")
@@ -16,7 +18,7 @@ param_minmax = param_minmax.in %>%
 rownames(param_minmax) = param_minmax$Parameter
 
 # Dose time, frequency, compartment, nominal dose
-tmax = 52*7 #days
+tmax = 60*52*7 #days
 tau  = 21   #days
 compartment = 2
 n_points = 10
@@ -48,7 +50,7 @@ for (drug in "Atezolizumab"){ #loop over all the drugs in the list
       param.as.double = param_as_double
       dose.nmol       = dose_nmol
       sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment, infusion)
-      thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau)
+      thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau,              infusion)
       
       #all parameter values for the output table
       par = param_as_double %>% 
@@ -93,7 +95,7 @@ out_last = out_plot[(out$time==max(out$time)),]
 
 g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
 g = g + geom_line()
-g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
+#g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
 g = g + geom_vline(xintercept = tau, linetype = "dotted")
 g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
 g = g + xgx_scale_y_log10()
@@ -103,6 +105,13 @@ g = g + ggtitle(paste0(  "AFIR_thy  = ",signif(results$AFIR_thy,2),
                        "\nSCIM_sim = ",signif(results$SCIM_sim,2),
                        "\nSCIM_thy = ",signif(results$SCIM_thy,2),
                        "\nKd_TL = ",signif(results$Kd_TL,2)))
+print(g)
+
+out_plot2 <- out_plot %>% 
+  filter(cmt=="TL")
+
+g = g %+% out_plot2
+g = g + scale_y_continuous()
 print(g)
 
 print(results$Ttotss_sim)
