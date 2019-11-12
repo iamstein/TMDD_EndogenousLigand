@@ -1,7 +1,7 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$rscript_name = "Task14c_Parallel_Coordinates_Soluble_2019-10-12_AFIR.R"
+dirs$rscript_name = "Task14d_Parallel_Coordinates_Soluble_2019-10-12_AFIRvsSCIM.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 
@@ -103,7 +103,7 @@ data_keep = data %>%
 
 #put simulations into different categories
 data_summary = data_keep %>%
-  group_by(AFIRthy_AFIRsim_category) %>%
+  group_by(AFIRthy_SCIMsim_category) %>%
   count() %>%
   arrange(desc(n))
 kable(data_summary)
@@ -118,8 +118,8 @@ data_plot = data_keep %>%
 
 #sort by average param value in one category to help with visualization ----
 data_summ = data_plot %>%
-  filter(AFIRthy_AFIRsim_category == "AFIRthy < 5%, AFIRsim > 30%") %>%
-  group_by(param,AFIRthy_AFIRsim_category) %>%
+  filter(AFIRthy_SCIMsim_category == "AFIRthy < 5%, SCIMsim > 30%") %>%
+  group_by(param,AFIRthy_SCIMsim_category) %>%
   summarise(x = mean(param_value)) %>%
   arrange(x) %>%
   ungroup()
@@ -129,10 +129,9 @@ data_plot = data_plot %>%
   mutate(param = factor(param, 
                         levels = data_summ$param))
 
-
 g = ggplot(data_plot, aes(x=param,y=param_value, group = id, color = assumption_all))
 g = g + geom_line(alpha = 0.01)
-g = g + facet_grid(AFIRsim_category~AFIRthy_category,switch = "y")
+g = g + facet_grid(SCIMsim_category~AFIRthy_category,switch = "y")
 g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 g = g + labs(x = "Parameter", y = "Parameter Value")
 g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
@@ -145,48 +144,33 @@ print(g)
 #AFIRsim > 30% and AFIRthy < 5% ---- on look, there is lots of L0!!!
 #focus on this plot
 data_new = data_plot %>%
-  filter(AFIRsim_category == "AFIRsim > 30%",
+  filter(SCIMsim_category == "SCIMsim > 30%",
          AFIRthy_category == "AFIRthy < 5%",
          assumption_all == TRUE)
 g = g1
 g = g %+% data_new
 g = g + geom_line(alpha = 0.05)
-g = xgx_save(5,5,dirs,"Parallel_Coord_Soluble_AFIRthy_lt_5_AFIRsim_ge_30","")
+g = xgx_save(5,5,dirs,"Parallel_Coord_Soluble_AFIRthy_lt_5_SCIMsim_ge_30","")
+g2= g
 print(g)
 
 
-stop()
-#2. AFIRthy vs AFIRsim : 2 colors ----
-data_plot_color = data_plot %>%
-  filter(AFIRthy_AFIRsim_category %in% c("AFIRthy < 5%, AFIRsim < 5%","AFIRthy < 5%, AFIRsim > 30%"))
-
-g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, 
-                                color = AFIRthy_AFIRsim_category,
-                                alpha = AFIRthy_AFIRsim_category))
-g = g + geom_line()
-g = g + geom_point()
-g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-g = g + scale_color_manual(values = c("grey50","red"))
-g = g + scale_alpha_manual(values = c(0.01, .1))
-g = g + theme(legend.position = "top", legend.direction = "vertical")
-g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
-g = g + labs(x = "Parameter", y = "Parameter Value")
-g = xgx_save(4,4,dirs,"Parallel_Coord_Soluble_2cat_AFIRthy_AFIRsim","")
+#identify patients where all assumptions true and theory vs sim disagree.  
+#simulate these patients ----
+id = unique(data_new$id)
+id_plot = id[4]
+g = g2
+g = g + geom_line(data = filter(data_new,id==id_plot),
+                  size = 2,
+                  color = "black")
+g = g + ggtitle(paste("id =",id_plot))
 print(g)
+filepref = paste0("Parallel_Coord_Soluble_AFIRthy_lt_5_SCIMsim_ge_30_",id_plot)
+g = xgx_save(5,5,dirs,filepref,"")
 
-#3. SCIMthy vs SCIMsim ----
-data_plot_color = data_plot %>%
-  filter(SCIMthy_SCIMsim_category %in% c("SCIMthy < 5%, SCIMsim < 5%","SCIMthy < 5%, SCIMsim > 30%"))
+param = data_in %>%
+  filter(id==id_plot)
 
-g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, 
-                                color = AFIRsim_SCIMsim_category,
-                                alpha = AFIRsim_SCIMsim_category))
-g = g + geom_line()
-g = g + geom_point()
-g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-g = g + scale_color_manual(values = c("grey50","red"))
-g = g + scale_alpha_manual(values = c(0.01, .1))
-g = g + theme(legend.position = "top", legend.direction = "vertical")
-g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
-g = g + labs(x = "Parameter", y = "Parameter Value")
-g = xgx_save(4,4,dirs,"Parallel_Coord_Soluble_2cat_AFIRsim_SCIMsim","")
+
+
+

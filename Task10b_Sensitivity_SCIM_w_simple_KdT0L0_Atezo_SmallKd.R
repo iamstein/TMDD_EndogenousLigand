@@ -48,7 +48,7 @@ for (drug in "Atezolizumab"){ #loop over all the drugs in the list
       param.as.double = param_as_double
       dose.nmol       = dose_nmol
       sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment, infusion)
-      thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau)
+      thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau,              infusion)
       
       #all parameter values for the output table
       par = param_as_double %>% 

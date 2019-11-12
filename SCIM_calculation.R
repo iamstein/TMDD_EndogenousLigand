@@ -56,7 +56,10 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
 
     TL0   = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
     T0    = with(pars,(ksynT - keTL*TL0)/keT)
-    Tfold = Ttotss/T0
+    L0    = with(pars,(ksynL - keTL*TL0)/keL)
+    
+    #Tfold = Ttotss/T0 - this is not quite correct.  See simulation 1424 from Task15/16
+    Tfold = with(pars,keT/keDT)
     
     SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
     SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
@@ -81,6 +84,8 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   lumped_parameters_theory = data.frame(
     T0_thy = T0,
+    TL0_thy = TL0,
+    L0_thy  = L0,
     Ttotss_thy = Ttotss,
     Lss_thy = Lss,
     Dss_thy = Dss,
