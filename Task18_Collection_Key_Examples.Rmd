@@ -25,7 +25,7 @@ data_in$tmax = 16*7
 data = data_in
 ```
 
-# Patient 1770 - rounding errors cause negative TL
+# Rounding errors cause negative TL
 ### Fix - exclude cases where this happens
 
 ```{r, warning = FALSE, message = FALSE}
@@ -34,7 +34,7 @@ kable(out$param)
 kable(out$compare)
 ```
 
-# Patient 1424 - rounding errors cause negative TL
+# Not a problem, but need to use "correct" Tfold formula
 ### Fix - For AFIR to predict SCIM, we require Tfold is right
 
 Here, the AFIR equations is actually wrong.  Because the free target T0 is accumulating much more than expected.  Because T is actually accumulating much more than expected by AFIR (keT/keDT ~ 300), because T0 is lower than expected by AFIR, because most of T is bound to its ligand.
@@ -49,5 +49,31 @@ kable(out$param)
 kable(out$compare)
 ```
 
+# L accumulates.  Causes an error.  
+### Fix - Can we include an L accumulation factor?  Rearranging SCIM?
+
+What if we degine:
+Lfold = Lss/L0
+
+And then we note that
+Lss = L0*Lfold
+
+And that
+Kss_TL = L0*T0/TL0
+
+Then, with a bit of rearranging, we have
+SCIM = Kd*Lfold/Dss
+
+Is that right?  Or do we get a Tfold too?  Need to think a bit more.
 
 
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 6) ,model)
+kable(out$param)
+kable(out$compare)
+```
+
+# Case where keTL = 0 and koff_TL is slow
+### fix - need the right model, because keTL won't really be zero
+
+Would need two sets of simulations. One with short time (say just a year) and one with long time, to illustrate the point.
