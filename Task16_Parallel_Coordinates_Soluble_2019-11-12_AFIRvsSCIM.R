@@ -198,6 +198,13 @@ param_as_double = param %>%
   setNames(nam)
 param_as_double = param_as_double[model$pin]
 
+param_print = param_as_double %>%
+  t() %>%
+  as.data.frame() %>%
+  mutate(CL = signif(keD/V1,2)) %>%
+  select(CL,T0,L0,Kd_DT,Kd_TL,kon_DT,kon_TL,keT,keL,keDT,keTL)
+  
+
 ev = eventTable(amount.units="nmol", time.units="days")
 sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
 sample.points = sort(sample.points)
@@ -250,8 +257,8 @@ g = g + ggtitle(paste0(  "id = ",param$id,
                          "\nAFIR_sim  = ",signif(sim$AFIR_sim,2),
                          "\nSCIM_thy = ",signif(thy$SCIM_adhoc_thy,2),
                          "\nSCIM_sim = ",signif(sim$SCIM_sim,2)))
-filepref = paste0("one_parameter_set_",id_plot)
-g = xgx_save(5,5,dirs,filepref,"")
+filepref = paste0("Parallel_Coord_Soluble_AFIRthy_lt_5_SCIMsim_ge_30_",id_plot)
+g = xgx_save(5,5,dirs,"")
 print(g)
 
 
