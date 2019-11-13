@@ -12,11 +12,14 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
+library(RxODE)
+model = ivsc_2cmt_RR_KdT0L0()
 dirs$rscript_name = "Task16b_Parallel_Coordinates_Soluble_2019-11-12_AFIRvsSCIM_T0assumpt.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 data_in = read.csv("results/Task15_2019-11-12_10e3.csv",stringsAsFactors = FALSE)
 data_in$id = 1:1e4
+data_in$tmax = 16*7
 #```
 
 # Compute various quantities for comparing AFIR and SCIM, theory and simulation
@@ -72,7 +75,7 @@ data = data %>%
          assumption_koffDT_gt_keT = koff_DT > keT,
          assumption_koffTL_fast   = koff_TL > 1/30,
          assumption_Cavgss_gg_LssKssDT_KssTL = Cavgss > 10*Kss_DT*Lss/Kss_TL,
-         assumption_T0simple    = T0/(ksynT/keT) > 0.5 & T0/(ksynT/keT) < 2, #the simple formula works for T0
+#         assumption_T0simple    = T0/(ksynT/keT) > 0.5 & T0/(ksynT/keT) < 2, #the simple formula works for T0
          assumption_L_noaccum   = Lss/L0 < 2, #then SCIM = AFIR
          assumption_Tss_gt_Lss  = Tss_sim > Lss_sim,
          assumption_all         = assumption_plateau & 
@@ -81,12 +84,18 @@ data = data %>%
                                   assumption_koffDT_gt_keT & 
                                   assumption_koffTL_fast &           
                                   assumption_Cavgss_gg_LssKssDT_KssTL &
-                                  assumption_T0simple &
+                                  #assumption_T0simple &
                                   assumption_Tss_gt_Lss &
-                                  assumption_L_noaccum,
-         assumption_category    = "",
-         assumption_category    = ifelse(assumption_plateau,"","!plateau, "),
-         assumption_category    = ifelse(assumption_drug_gg_T0,"","drug !>> T0"))
+                                  assumption_L_noaccum)
+
+assumptions = data %>%
+  select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
+  select(-assumption_all) %>%
+  arrange(SCIM_sim)
+nam = names(assumptions) %>%
+  str_replace("^assumption_","")
+names(assumptions) = nam
+View(assumptions)
 #```
 
 # Put data into error categories and summarize
@@ -177,6 +186,12 @@ data_new = data_plot %>%
   filter(SCIMsim_category == "SCIMsim > 30%",
          AFIRthy_category == "AFIRthy < 5%",
          assumption_all == TRUE)
+
+if (nrow(data_new)==0) {
+  stop("there are no examples of AFIR_thy<5% and SCIMsim > 30%")
+}
+  
+
 g = g1
 g = g %+% data_new
 g = g + geom_line(alpha = 0.05)
@@ -187,11 +202,6 @@ g2= g
 
 # Identify patients where all assumptions true and theory vs sim disagree.
 #```{r, warning=FALSE}
-source("SCIM_calculation.R")  
-source("ivsc_2cmt_RR_V1.R")
-model = ivsc_2cmt_RR_KdT0L0()
-library(RxODE)
-
 id = unique(sort(data_new$id))
 print("these IDs, even with all the restrictions, AFIR and SCIM still don't match")
 print(id)

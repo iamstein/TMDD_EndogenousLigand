@@ -34,7 +34,8 @@ param = as.data.frame(param) %>%
          Tfold     = keT/keDT,
          dose_nmol = Kss_DT*Tfold*CL*tau/AFIR,
          dose_mpk  = dose_nmol*scale.nmol2mpk,
-         keTL      = keL/Lfold)
+         keTL      = keL/Lfold,
+         tmax      = tmax)
 cat("instances of zero values\n")
 print(summarise_all(param,funs(sum(.==0))))
 
@@ -58,7 +59,7 @@ gg = gridExtra::arrangeGrob(g1,g2,nrow = 1, ncol = 2)
 gridExtra::grid.arrange(gg)
 
 # Run the simulations ----
-tmax = 16*7 #days (for soluble target, 16 weeks should be long enough)
+tmax = param$tmax[1] #days (for soluble target, 16 weeks should be long enough)
 tau  = param$tau[1]   #days
 compartment = 2
 infusion    = TRUE
@@ -85,7 +86,8 @@ for (i in 1:n_samples) {
   par = param.as.double %>% 
     t() %>% 
     as.data.frame() %>%
-    mutate(id = i)
+    mutate(id = i,
+           tmax)
 
   #create result table
   result[[i]] = bind_cols(sim,thy,par) %>%

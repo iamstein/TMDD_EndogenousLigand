@@ -58,8 +58,8 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     T0    = with(pars,(ksynT - keTL*TL0)/keT)
     L0    = with(pars,(ksynL - keTL*TL0)/keL)
     
-    #Tfold = Ttotss/T0 - this is not quite correct.  See simulation 1424 from Task15/16
-    Tfold = with(pars,keT/keDT)
+    Tfold = Ttotss/T0 #- this is not quite correct.  See simulation 1424 from Task15/16
+    #Tfold = with(pars,keT/keDT)
     
     SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
     SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
@@ -277,4 +277,87 @@ compare.thy.sim = function(model                 = model,
   }
   
   return(df_compare)
+}
+
+plot_param = function(param = param,
+                      model = model,
+                      infusion = TRUE) {
+  
+  tmax = param$tmax 
+  tau  = param$tau  
+  dose_nmol = param$dose_nmol
+  compartment = 2
+
+  nam   = names(param)
+  options(warn = -1)
+  param_as_double = param %>%
+    as.numeric() %>%
+    setNames(nam)
+  options(warn = 0)
+  param_as_double = param_as_double[model$pin]
+  
+  param_print = param_as_double %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate(id = param$id,
+           CL = signif(keD/V1,2)) %>%
+    select(id, CL,T0,L0,Kd_DT,Kd_TL,kon_DT,kon_TL,keT,keL,keDT,keTL)
+  
+  ev = eventTable(amount.units="nmol", time.units="days")
+  sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
+  sample.points = sort(sample.points)
+  sample.points = unique(sample.points)
+  ev$add.sampling(sample.points)
+  if (infusion == FALSE) {
+    ev$add.dosing(dose=dose_nmol, start.time = tau, nbr.doses=floor(tmax/tau), dosing.interval=tau, dosing.to=compartment)
+  } else {
+    ev$add.dosing(dose=dose_nmol, start.time = tau, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
+  }  
+  
+  sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment, infusion)
+  thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau,              infusion)
+  
+  sim_rename = sim
+  nam = names(sim_rename) %>%
+    str_replace_all("_sim$","")
+  names(sim_rename) = nam
+  sim_rename$type = "sim"
+  
+  thy_rename = thy
+  nam = names(thy_rename) %>%
+    str_replace_all("_thy$","")
+  names(thy_rename) = nam
+  thy_rename$type = "thy"
+  
+  compare = bind_rows(sim_rename,thy_rename) %>%
+    select(type,Dss,T0,L0,TL0,Ttotss,Lss,TLss,AFIR,SCIM)
+
+  init = model$init(param_as_double)
+  out  = model$rxode$solve(model$repar(param_as_double), ev, init)
+  out  = model$rxout(out)
+  
+  out_plot = out %>%
+    select(time,D,T,DT,L,TL) %>%
+    gather(cmt,value,-time)
+  out_last = out_plot[(out$time==max(out$time)),]
+  
+  g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
+  g = g + geom_line()
+  g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
+  g = g + geom_vline(xintercept = tau, linetype = "dotted")
+  g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
+  g = g + xgx_scale_y_log10()
+  g = g + labs(y = "Concentration (nm)", color = "")
+  g = g + ggtitle(paste0(  "id = ",param$id,
+                           "\nAFIR_thy  = ",signif(thy$AFIR_thy,2),
+                           "\nAFIR_sim  = ",signif(sim$AFIR_sim,2),
+                           "\nSCIM_thy = ",signif(thy$SCIM_adhoc_thy,2),
+                           "\nSCIM_sim = ",signif(sim$SCIM_sim,2)))
+  print(g)
+  
+  par#unfortunately, kable does not work properly inside for loop
+  out = list(
+    param = param_print,
+    compare = compare)
+  return(out)
 }

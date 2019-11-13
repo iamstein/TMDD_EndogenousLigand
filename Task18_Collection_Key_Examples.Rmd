@@ -1,0 +1,53 @@
+---
+title: "Task18 - Key Examples, perhaps for discussion"
+author: Andrew Stein
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+# Setup and Read Data
+```{r, warning=FALSE, message=FALSE}
+source("ams_initialize_script.R")
+source("SCIM_calculation.R")  
+source("ivsc_2cmt_RR_V1.R")
+library(RxODE)
+model = ivsc_2cmt_RR_KdT0L0()
+dirs$rscript_name = "Task16b_Parallel_Coordinates_Soluble_2019-11-12_AFIRvsSCIM_T0assumpt.R"
+dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
+
+data_in = read.csv("results/Task15_2019-11-12_10e3.csv",stringsAsFactors = FALSE)
+data_in$id = 1:1e4
+data_in$tmax = 16*7
+
+data = data_in
+```
+
+# Patient 1770 - rounding errors cause negative TL
+### Fix - exclude cases where this happens
+
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 1770) ,model)
+kable(out$param)
+kable(out$compare)
+```
+
+# Patient 1424 - rounding errors cause negative TL
+### Fix - For AFIR to predict SCIM, we require Tfold is right
+
+Here, the AFIR equations is actually wrong.  Because the free target T0 is accumulating much more than expected.  Because T is actually accumulating much more than expected by AFIR (keT/keDT ~ 300), because T0 is lower than expected by AFIR, because most of T is bound to its ligand.
+
+In practice, what would happen in this scenario is that, if we didn't have ligand data, we would actually predict greater accumulation.  And then actually, it might turn out that AFIR would be right!  So hmm, maybe the AFIR formula should really have Ttotss/T0 instead of keT/keDT.  
+
+This is actually an interesting story to tell, here.
+
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 1424) ,model)
+kable(out$param)
+kable(out$compare)
+```
+
+
+
