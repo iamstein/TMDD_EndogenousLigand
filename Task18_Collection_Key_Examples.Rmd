@@ -26,12 +26,55 @@ data = data_in
 
 assumptions = data %>%
   select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
-  select(-assumption_all) %>%
   arrange(SCIM_sim)
 nam = names(assumptions) %>%
   str_replace("^assumption_","")
 names(assumptions) = nam
+```
+# Explore agreement between AFIR theory and SCIM simulation
 
+List of assumptions
+
+ * AFIR < 0.30,
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+ * Lss/L0 ~ 1 (no accumulation of ligand)
+
+```{r, warning = FALSE, message = FALSE}
+g = ggplot(data, aes(AFIR_SCIM_pcterr, fill = assumption_all_AFIR))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("AFIR theory vs\nSCIM simulation")
+print(g)
+```
+
+
+# Explore agreemnet between SCIM theory and SCIM simulation
+
+List of assumptions.  They are similar to the AFIR assumptions, but now we allow for accumulation of Ligand
+
+ * SCIM < 30%
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+
+```{r, warning = FALSE, message = FALSE}
+g = ggplot(data, aes(SCIM_SCIM_pcterr, fill = assumption_all_SCIM))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("SCIM adhoc Lfold theory vs\nSCIM simulation")
+print(g)
 ```
 
 # Here we check that rounding errors are no longer a problem
@@ -48,7 +91,8 @@ kable(out$compare)
 
 ```
 
-# Not a problem, but need to use "correct" Tfold formula
+# Make sure to use "correct" Tfold formula
+
 ### Fix - For AFIR to predict SCIM, we require Tfold is right
 
 Here, the AFIR equations is actually wrong.  Because the free target T0 is accumulating much more than expected.  Because T is actually accumulating much more than expected by AFIR (keT/keDT ~ 300), because T0 is lower than expected by AFIR, because most of T is bound to its ligand.
@@ -63,8 +107,9 @@ kable(out$param)
 kable(out$compare)
 ```
 
-# L accumulates.  Causes an error.  
-### Fix - Can we include an L accumulation factor?  Rearranging SCIM?
+# L accumulates.  Causes a mismatch between AFIR and SCIM  
+
+### Fix - Need to include an L accumulation factor?  Now included in the overleaf document
 
 What if we degine:
 Lfold = Lss/L0

@@ -287,7 +287,8 @@ compare.thy.sim = function(model                 = model,
 # plot results ----
 plot_param = function(param = param,
                       model = model,
-                      infusion = TRUE) {
+                      infusion = TRUE,
+                      plot_flag = TRUE) {
   
   tmax = param$tmax 
   tau  = param$tau  
@@ -360,11 +361,14 @@ plot_param = function(param = param,
                            "\nSCIM_Lfold_adhoc_thy = "          ,signif(thy$SCIM_Lfold_adhoc_thy,2),
                            "\nSCIM_adhoc_thy           = "      ,signif(thy$SCIM_adhoc_thy,2),
                            "\nSCIM_sim                      = " ,signif(sim$SCIM_sim,2)))
-  print(g)
+  if (plot_flag == TRUE) {
+    print(g)
+  }
   
   par#unfortunately, kable does not work properly inside for loop
   out = list(
     param = param_print,
-    compare = compare)
+    compare = compare,
+    plot    = g)
   return(out)
 }

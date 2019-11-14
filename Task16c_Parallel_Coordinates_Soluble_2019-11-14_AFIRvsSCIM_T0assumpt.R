@@ -35,8 +35,11 @@ data    = data_in %>%
          koff_DT = Kd_DT*kon_DT,
          ksynT   = T0*keT + keTL*TL0,
          ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0,
-         Lss     = ksynL/keL) %>%
-  mutate(AFIR_SCIM_sqerr = (AFIR_thy - SCIM_sim)^2) %>%
+         Lss     = ksynL/keL,
+         Lfold   = Lss/L0) %>%
+  mutate(AFIR_SCIM_pcterr = abs((AFIR_thy             - SCIM_sim)/SCIM_sim),
+         SCIM_SCIM_pcterr = abs((SCIM_Lfold_adhoc_thy - SCIM_sim)/SCIM_sim),
+         SCIM_SCIM_pcterr = ifelse(SCIM_SCIM_pcterr < 0.001, 0.0001, SCIM_SCIM_pcterr)) %>%
   mutate(AFIRthy_category = case_when(AFIR_thy <  0.05 ~ "AFIRthy < 5%",
                                       AFIR_thy >  0.30 ~ "AFIRthy > 30%",
                                       AFIR_thy >= 0.05 &  AFIR_thy <= 0.30 ~ "5% <= AFIRthy <= 30%"),
@@ -52,9 +55,7 @@ data    = data_in %>%
          AFIRthy_AFIRsim_category = paste0(AFIRthy_category, ", ", AFIRsim_category),
          AFIRthy_SCIMsim_category = paste0(AFIRthy_category, ", ", SCIMsim_category),
          AFIRsim_SCIMsim_category = paste0(AFIRsim_category, ", ", SCIMsim_category),
-         SCIMthy_SCIMsim_category = paste0(SCIMthy_category, ", ", SCIMsim_category),
-         error_category = case_when(AFIR_SCIM_sqerr < 0.1 ~ "low_error",
-                                    TRUE ~ "high_error"))
+         SCIMthy_SCIMsim_category = paste0(SCIMthy_category, ", ", SCIMsim_category))
 data = data %>%
   arrange(AFIR_thy) %>%
   mutate(AFIRthy_category = factor(AFIRthy_category, levels = unique(AFIRthy_category))) %>%
@@ -68,23 +69,28 @@ data = data %>%
   mutate(Ttotss                   = T0*Tfold,
          koff_DT                  = Kd_DT*kon_DT,
          assumption_AFIR_lt_30    = AFIR_thy < 0.30,
-         assumption_drug_gg_T0    = Cavgss > 10*Ttotss,
-         assumption_drug_gg_KssDT = Cavgss > 10*Kss_DT,
+         assumption_SCIM_lt_30    = SCIM_Lfold_adhoc_thy < 0.30,
+         assumption_drug_gg_T0    = Cavgss > 5*Ttotss,
+         assumption_drug_gg_KssDT = Cavgss > 5*Kss_DT,
          assumption_koffDT_gt_keT = koff_DT > keT,
          assumption_koffTL_fast   = koff_TL > 1/30,
-         assumption_Cavgss_gg_LssKssDT_KssTL = Cavgss > 10*Kss_DT*Lss/Kss_TL,
+         assumption_Cavgss_gg_LssKssDT_KssTL = Cavgss > 5*Kss_DT*Lss/Kss_TL,
 #         assumption_T0simple    = T0/(ksynT/keT) > 0.5 & T0/(ksynT/keT) < 2, #the simple formula works for T0
-         assumption_L_noaccum   = Lss/L0 < 2, #then SCIM = AFIR
+         assumption_L_noaccum   = Lss/L0 <= 1.01, #then SCIM = AFIR
 #         assumption_Tss_gt_Lss  = Tss_sim > Lss_sim,
-         assumption_all         = assumption_AFIR_lt_30 & 
+         assumption_all_AFIR    = assumption_AFIR_lt_30 & 
                                   assumption_drug_gg_T0 &
                                   assumption_drug_gg_KssDT &
-                                  assumption_koffDT_gt_keT & 
+                                  #assumption_koffDT_gt_keT & 
                                   assumption_koffTL_fast &           
                                   assumption_Cavgss_gg_LssKssDT_KssTL &
-                                  assumption_L_noaccum)
-#                                  assumption_T0simple &
-#                                  assumption_Tss_gt_Lss &
+                                  assumption_L_noaccum,
+         assumption_all_SCIM =    assumption_SCIM_lt_30 & 
+                                  assumption_drug_gg_T0 &
+                                  assumption_drug_gg_KssDT &
+                                  #assumption_koffDT_gt_keT & 
+                                  assumption_koffTL_fast &           
+                                  assumption_Cavgss_gg_LssKssDT_KssTL)
 
 
 data = data %>%
@@ -92,16 +98,14 @@ data = data %>%
   select(id,everything())
 filename = paste0("results/",dirs$filename_prefix,"data.csv")
 write.csv(data,filename, row.names = FALSE )
-x = read.csv(filename,stringsAsFactors = FALSE)
 
 assumptions = data %>%
   select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
-  select(-assumption_all) %>%
   arrange(SCIM_sim)
 nam = names(assumptions) %>%
   str_replace("^assumption_","")
 names(assumptions) = nam
-View(assumptions)
+#View(assumptions)
 #```
 
 # Put data into error categories and summarize
@@ -117,10 +121,10 @@ print(paste0(nrow(data_err0)," of ", nrow(data_in), " : Number of rows with TL0_
 
 # error historgram ----
 data_quick_summ = data %>%
-  select(id,AFIR_thy, SCIM_sim, AFIR_SCIM_sqerr, TLss_frac_change, TL0_05tau_frac_change) %>%
+  select(id,AFIR_thy, SCIM_sim, AFIR_SCIM_pcterr, TLss_frac_change, TL0_05tau_frac_change) %>%
   gather(key,value,-c(id)) %>%
   mutate(category = case_when((value < threshold) ~ "keep_low",
-                              ((value >= threshold) & (key %in% c("AFIR_SCIM_sqerr","SCIM_sim"))) ~ "keep_high",
+                              ((value >= threshold) & (key %in% c("AFIR_SCIM_pcterr","SCIM_sim"))) ~ "keep_high",
                               ((value >= threshold) & (key %in% c("AFIR_thy"))) ~ "keep_high_AFIR",
                               TRUE ~ "remove_high_error"))
 
@@ -149,6 +153,66 @@ data_summary = data_keep %>%
 kable(data_summary)
 #```
 
+# histogram of AFIR_theory and SCIM_sim error ----
+# g = ggplot(data, aes(Lfold))
+# g = g + geom_histogram()
+# g = g + xgx_scale_x_log10()
+# print(g)
+
+g = ggplot(data, aes(AFIR_SCIM_pcterr, fill = assumption_all_AFIR))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + ggtitle("AFIR theory vs SCIM simulation")
+print(g)
+
+data_sort_error = data %>% 
+  filter(assumption_all_AFIR == TRUE) %>%
+  arrange(desc(AFIR_SCIM_pcterr))
+
+#error seems to be due to small accumulation of L.  See plot below (commented)
+#plot_param(data_sort_error[1,],model)
+
+# histogram SCIM_theory vs SCIM_sim ----
+g = ggplot(data, aes(SCIM_SCIM_pcterr, fill = assumption_all_SCIM))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("SCIM adhoc Lfold theory vs\nSCIM simulation")
+print(g)
+
+#patient with biggest error and all assumptions true
+data_sort_error = data %>% 
+  filter(assumption_all_SCIM == TRUE) %>%
+  arrange(desc(SCIM_SCIM_pcterr))
+
+out = plot_param(data_sort_error[1,], model, plot_flag = FALSE)
+g = out$plot + labs(subtitle = "assumptions true\nbig diff btw thy and sim")
+print(g)
+
+#patient with small error and a false assumption
+data_sort_error = data %>% 
+  filter(assumption_all_SCIM == FALSE) %>%
+  arrange(SCIM_SCIM_pcterr)
+
+id = data_sort_error$id[1]
+out = plot_param(data_sort_error[1,], model, plot_flag = FALSE)
+g = out$plot + labs(subtitle = "assumptions false\nsmall diff btw thy and sim")
+print(g)
+
+assumption_focus = data %>%
+  filter(assumption_all_SCIM == FALSE) %>%
+  arrange(SCIM_SCIM_pcterr) %>%
+  select(id, SCIM_SCIM_pcterr, contains("assumption")) 
+#  filter(id %in% c(data_sort_error$id[1:10])) 
+nam = names(assumption_focus) %>%
+  str_replace("assumption_","")
+names(assumption_focus) = nam
+View(assumption_focus)
+stop()
+
 # AFIRsim vs SCIMsim : 3x3 plot colors ----
 #```{r, warning=FALSE, message=FALSE, results = 'asis'}
 param2uniform = function(x) {(log(x) - log(min(x)))/(log(max(x))-log(min(x)))}
@@ -171,7 +235,7 @@ data_plot = data_plot %>%
   mutate(param = factor(param, 
                         levels = data_summ$param))
 
-g = ggplot(data_plot, aes(x=param,y=param_value, group = id, color = assumption_all, alpha = assumption_all))
+g = ggplot(data_plot, aes(x=param,y=param_value, group = id, color = assumption_all_AFIR, alpha = assumption_all_AFIR))
 g = g + geom_line()
 g = g + facet_grid(SCIMsim_category~AFIRthy_category,switch = "y")
 g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -192,7 +256,7 @@ print(g)
 data_new = data_plot %>%
   filter(SCIMsim_category == "SCIMsim > 30%",
          AFIRthy_category == "AFIRthy < 5%",
-         assumption_all == TRUE)
+         assumption_all_AFIR == TRUE)
 
 if (nrow(data_new)==0) {
   stop("there are no examples of AFIR_thy<5% and SCIMsim > 30%")

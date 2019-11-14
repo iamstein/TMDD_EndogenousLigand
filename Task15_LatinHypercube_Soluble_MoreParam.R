@@ -104,10 +104,10 @@ for (i in 1:n_samples) {
     
     #want to reduce the number of sig digs to save a bit of space, 
     #but need to keep them for the id
-    id_all_sig_digs = results_save$id
-    results_save = results_save %>%
-      signif(digits = 3) %>%
-      mutate(id = id_all_sig_digs)
+    #id_all_sig_digs = results_save$id
+    #results_save = results_save %>%
+    #  signif(digits = 6) %>%
+    #  mutate(id = id_all_sig_digs)
     
     write.csv(results_save,filename,quote = FALSE, row.names = FALSE)
   }
@@ -117,7 +117,7 @@ for (i in 1:n_samples) {
   if ( ((i %% n_sim)==1) & (result[[i]]$error_simulation == FALSE) ) {
     plot_param(result[[i]],model)
   }
-  }
+}
 stop_time = Sys.time()
 cat("Total time: total_duration\n")
 total_duration = (stop_time-start_time)
