@@ -7,6 +7,8 @@ output:
     toc_float: true
     code_folding: hide
 ---
+# Introduction
+The idea is to identify cases where AFIR theory doesn't match SCIM simulation and understand why and build in tests for this.
 
 # Setup and Read Data
 ```{r, warning=FALSE, message=FALSE}
@@ -15,23 +17,35 @@ source("SCIM_calculation.R")
 source("ivsc_2cmt_RR_V1.R")
 library(RxODE)
 model = ivsc_2cmt_RR_KdT0L0()
-dirs$rscript_name = "Task16b_Parallel_Coordinates_Soluble_2019-11-12_AFIRvsSCIM_T0assumpt.R"
+dirs$rscript_name = "Task18_Collection_Key_Examples.Rmd"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
-data_in = read.csv("results/Task15_2019-11-12_10e3.csv",stringsAsFactors = FALSE)
-data_in$id = 1:1e4
-data_in$tmax = 16*7
+data_in = read.csv("results/Task16c_data.csv",stringsAsFactors = FALSE)
 
 data = data_in
+
+assumptions = data %>%
+  select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
+  select(-assumption_all) %>%
+  arrange(SCIM_sim)
+nam = names(assumptions) %>%
+  str_replace("^assumption_","")
+names(assumptions) = nam
+
 ```
 
-# Rounding errors cause negative TL
-### Fix - exclude cases where this happens
+# Here we check that rounding errors are no longer a problem
+### fixed by setting atol and rtol to 1e-12
 
 ```{r, warning = FALSE, message = FALSE}
 out = plot_param(data %>% filter(id == 1770) ,model)
 kable(out$param)
 kable(out$compare)
+
+out = plot_param(data %>% filter(id == 4) ,model)
+kable(out$param)
+kable(out$compare)
+
 ```
 
 # Not a problem, but need to use "correct" Tfold formula

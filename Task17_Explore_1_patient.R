@@ -8,44 +8,13 @@ dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 data_in = read.csv("results/Task15_2019-11-12_10e3.csv",stringsAsFactors = FALSE)
 data_in$id = seq(1,10000)
 
-data    = data_in %>%
-  mutate(Cavgss  = dose_nmol/(CL*tau),
-         Kss_TL  = Kd_TL + keTL/kon_TL,
-         Kss_DT  = Kd_DT + keDT/kon_DT,
-         TL0     = T0*L0/Kss_TL,
-         koff_TL = Kd_TL*kon_TL,
-         koff_DT = Kd_DT*kon_DT,
-         ksynT   = T0*keT + keTL*TL0,
-         ksynL   = L0*(kon_TL*T0 + keL) - koff_TL*TL0,
-         Lss     = ksynL/keL)
-
-#check the assumptions of the data ----
-data = data %>%
-  mutate(Ttotss                 = T0*Tfold,
-         koff_DT                = Kd_DT*kon_DT,
-         assumption_plateau     = AFIR_thy < 0.30,
-         assumption_drug_gg_T0  = Cavgss > 10*Ttotss,
-         assumption_drug_gg_KssDT = Cavgss > 10*Kss_DT,
-         assumption_koffDT_gt_keT = koff_DT > keT,
-         assumption_koffTL_fast   = koff_TL > 1/30,
-         assumption_Cavgss_gg_LssKssDT_KssTL = Cavgss > 10*Kss_DT*Lss/Kss_TL,
-         assumption_all         = assumption_plateau & 
-                                  assumption_drug_gg_T0 &
-                                  assumption_drug_gg_KssDT &
-                                  assumption_koffDT_gt_keT & 
-                                  assumption_koffTL_fast &           
-                                  assumption_Cavgss_gg_LssKssDT_KssTL,
-         assumption_category    = "",
-         assumption_category    = ifelse(assumption_plateau,"","!plateau, "),
-         assumption_category    = ifelse(assumption_drug_gg_T0,"","drug !>> T0"))
-
 #simulate a patient where theory and simulation disagree ----
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
 model = ivsc_2cmt_RR_KdT0L0()
 library(RxODE)
 
-id_simulate = 1424
+id_simulate = 1770
 
 param = data %>%
   filter(id==id_simulate)

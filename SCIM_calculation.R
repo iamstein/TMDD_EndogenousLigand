@@ -59,12 +59,15 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     L0    = with(pars,(ksynL - keTL*TL0)/keL)
     
     Tfold = Ttotss/T0 #- this is not quite correct.  See simulation 1424 from Task15/16
+    Lfold = Lss/L0
     #Tfold = with(pars,keT/keDT)
     
-    SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
-    SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
-    SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
-    SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
+    SCIM             = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
+    SCIM_adhoc       = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
+    SCIM_simpler     = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
+    SCIM_simplest    = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
+    SCIM_Lfold       = with(pars, Kss_DT*Tfold*Lfold/Dss)
+    SCIM_Lfold_adhoc = with(pars,(Kss_DT*Tfold*Lfold)/(Dss+Kss_DT*Tfold*Lfold))
     
     
     #SCIM          = with(pars,Ttotss/((((Kss_TL*Dss*keL)/(Kss_DT*ksynL))+((Kss_TL*keL)/(ksynL))+1)*TL0))
@@ -99,6 +102,8 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     SCIM_adhoc_thy    = SCIM_adhoc,
     SCIM_simpler_thy  = SCIM_simpler,
     SCIM_simplest_thy = SCIM_simplest,
+    SCIM_Lfold_thy    = SCIM_Lfold,
+    SCIM_Lfold_adhoc_thy = SCIM_Lfold_adhoc,
     
     stringsAsFactors = FALSE
   )
@@ -147,7 +152,7 @@ lumped.parameters.simulation = function(model           = model,
   
   error_simulation = FALSE
   out = tryCatch({
-    model$rxode$solve(model$repar(param.as.double), ev, init)
+    model$rxode$solve(model$repar(param.as.double), ev, init, atol = 1e-12, rtol = 1e-12)
   }, error = function(e) {
     data.frame(time = NA, D = NA, T = NA, DT = NA, L = NA, TL = NA)
   })
@@ -190,7 +195,7 @@ lumped.parameters.simulation = function(model           = model,
   } else {
     error_simulation = TRUE
     TL0 = T0 = L0 = Ttotss = Lss = Dss = AFIR = SCIM = 
-      t_last_dose = TLss = TLss_frac_change = TL0_05tau_frac_change = 
+      t_last_dose = TLss = Tss = TLss_frac_change = TL0_05tau_frac_change = 
       TLss_prev = TL05tau = NA
   }
   lumped_parameters_sim = data.frame(
@@ -279,6 +284,7 @@ compare.thy.sim = function(model                 = model,
   return(df_compare)
 }
 
+# plot results ----
 plot_param = function(param = param,
                       model = model,
                       infusion = TRUE) {
@@ -333,7 +339,7 @@ plot_param = function(param = param,
     select(type,Dss,T0,L0,TL0,Ttotss,Lss,TLss,AFIR,SCIM)
 
   init = model$init(param_as_double)
-  out  = model$rxode$solve(model$repar(param_as_double), ev, init)
+  out  = model$rxode$solve(model$repar(param_as_double), ev, init, atol = 1e-12, rtol = 1e-12)
   out  = model$rxout(out)
   
   out_plot = out %>%
@@ -349,10 +355,11 @@ plot_param = function(param = param,
   g = g + xgx_scale_y_log10()
   g = g + labs(y = "Concentration (nm)", color = "")
   g = g + ggtitle(paste0(  "id = ",param$id,
-                           "\nAFIR_thy  = ",signif(thy$AFIR_thy,2),
-                           "\nAFIR_sim  = ",signif(sim$AFIR_sim,2),
-                           "\nSCIM_thy = ",signif(thy$SCIM_adhoc_thy,2),
-                           "\nSCIM_sim = ",signif(sim$SCIM_sim,2)))
+                           "\nAFIR_thy                       = ",signif(thy$AFIR_thy,2),
+                           "\nAFIR_sim                      = " ,signif(sim$AFIR_sim,2),
+                           "\nSCIM_Lfold_adhoc_thy = "          ,signif(thy$SCIM_Lfold_adhoc_thy,2),
+                           "\nSCIM_adhoc_thy           = "      ,signif(thy$SCIM_adhoc_thy,2),
+                           "\nSCIM_sim                      = " ,signif(sim$SCIM_sim,2)))
   print(g)
   
   par#unfortunately, kable does not work properly inside for loop

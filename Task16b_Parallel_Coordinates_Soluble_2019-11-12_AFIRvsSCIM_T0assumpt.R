@@ -17,7 +17,7 @@ model = ivsc_2cmt_RR_KdT0L0()
 dirs$rscript_name = "Task16b_Parallel_Coordinates_Soluble_2019-11-12_AFIRvsSCIM_T0assumpt.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
-data_in = read.csv("results/Task15_2019-11-12_10e3.csv",stringsAsFactors = FALSE)
+data_in = read.csv("results/Task15_2019-11-14_10e3.csv",stringsAsFactors = FALSE)
 data_in$id = 1:1e4
 data_in$tmax = 16*7
 #```
@@ -69,7 +69,7 @@ data = data %>%
 data = data %>%
   mutate(Ttotss                 = T0*Tfold,
          koff_DT                = Kd_DT*kon_DT,
-         assumption_plateau     = AFIR_thy < 0.30,
+         assumption_SCIM_lt_30  = SCIM_ < 0.30,
          assumption_drug_gg_T0  = Cavgss > 10*Ttotss,
          assumption_drug_gg_KssDT = Cavgss > 10*Kss_DT,
          assumption_koffDT_gt_keT = koff_DT > keT,
@@ -78,7 +78,7 @@ data = data %>%
 #         assumption_T0simple    = T0/(ksynT/keT) > 0.5 & T0/(ksynT/keT) < 2, #the simple formula works for T0
          assumption_L_noaccum   = Lss/L0 < 2, #then SCIM = AFIR
          assumption_Tss_gt_Lss  = Tss_sim > Lss_sim,
-         assumption_all         = assumption_plateau & 
+         assumption_all         = assumption_SCIM_lt_30 & 
                                   assumption_drug_gg_T0 &
                                   assumption_drug_gg_KssDT &
                                   assumption_koffDT_gt_keT & 
@@ -87,6 +87,13 @@ data = data %>%
                                   #assumption_T0simple &
                                   assumption_Tss_gt_Lss &
                                   assumption_L_noaccum)
+
+data = data %>%
+  arrange(id) %>%
+  select(id,everything())
+filename = paste0("results/",dirs$filename_prefix,"data.csv")
+write.csv(data,filename, row.names = FALSE )
+x = read.csv(filename,stringsAsFactors = FALSE)
 
 assumptions = data %>%
   select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
@@ -133,6 +140,7 @@ print(g)
 data_keep = data %>%
   filter(TLss_frac_change < threshold, 
          TL0_05tau_frac_change < threshold)
+
 
 #put simulations into different categories
 data_summary = data_keep %>%

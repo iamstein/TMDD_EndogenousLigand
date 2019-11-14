@@ -8,6 +8,10 @@ library(lhs)
 
 n_samples = 1e4 #number of parameters sets to simulate
 
+tmax        = 7*20 #days (for soluble target, 16 weeks should be long enough)
+compartment = 2
+infusion    = TRUE
+
 model = ivsc_2cmt_RR_KdT0L0()
 
 #read in parameter ranges to explore
@@ -30,11 +34,16 @@ param = exp(log_min + (log_max - log_min)*x)
 param[is.na(param)] = 0
 colnames(param) = param_minmax$Parameter
 param = as.data.frame(param) %>%
-  mutate(Kss_DT    = Kd_DT + keDT/kon_DT,
-         Tfold     = keT/keDT,
-         dose_nmol = Kss_DT*Tfold*CL*tau/AFIR,
+  mutate(keTL      = keL/keL_keTL_ratio,
+         Kss_DT    = Kd_DT + keDT/kon_DT,
+         Kss_TL    = Kd_TL + keTL/kon_TL,
+         TL0       = T0*L0/Kss_TL,
+         ksynT     = T0*keT + keTL*TL0,
+         Ttotss    = ksynT/keDT,
+         Tfold     = Ttotss/T0,
+         dose_nmol = Kss_DT*Tfold*CL*tau/AFIR, #choose dose to get AFIR_simple in range
          dose_mpk  = dose_nmol*scale.nmol2mpk,
-         keTL      = keL/Lfold,
+         keTL      = keL/keL_keTL_ratio,
          tmax      = tmax)
 cat("instances of zero values\n")
 print(summarise_all(param,funs(sum(.==0))))
@@ -59,11 +68,6 @@ gg = gridExtra::arrangeGrob(g1,g2,nrow = 1, ncol = 2)
 gridExtra::grid.arrange(gg)
 
 # Run the simulations ----
-tmax = param$tmax[1] #days (for soluble target, 16 weeks should be long enough)
-tau  = param$tau[1]   #days
-compartment = 2
-infusion    = TRUE
-
 start_time = Sys.time()
 result = list()
 
@@ -76,7 +80,7 @@ for (i in 1:n_samples) {
     as.numeric()
   names(param.as.double) = names(param)
   dose.nmol       = as.numeric(param.as.double["dose_mpk"])*scale_mpk2nmol
-  
+  tau             = param.as.double["tau"]
   
   error_flag = 0
   thy = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau,              infusion = infusion)
@@ -91,60 +95,29 @@ for (i in 1:n_samples) {
 
   #create result table
   result[[i]] = bind_cols(sim,thy,par) %>%
-#    select(-c(TL0_sim, T0_sim, L0_sim, Ttotss_sim, Lss_sim, D_sim,  time_last_dose,
-#                       T0_thy,         Ttotss_thy, Lss_thy,Dss_thy, 
-#                       F, ka, CL, Q, V1, V2, keD, k12, k21, Vm, Km, tau)) %>%
     select(id,everything())
-    
+  
   if (((i %% 1e5) == 0) || (i==n_samples)) {
     filename = paste0("results/",dirs$filename_prefix,Sys.Date(),"_",i/1e3,"e3.csv")
-    id_all_sig_digs = result$id
     results_save = result %>%
-      bind_rows() %>%
+      bind_rows()
+    
+    #want to reduce the number of sig digs to save a bit of space, 
+    #but need to keep them for the id
+    id_all_sig_digs = results_save$id
+    results_save = results_save %>%
       signif(digits = 3) %>%
       mutate(id = id_all_sig_digs)
+    
     write.csv(results_save,filename,quote = FALSE, row.names = FALSE)
   }
   
   #plot a simulation after every n_sim simulations
-  n_sim = 500
-  if ( ((i %% n_sim)==0) & (result[[i]]$error_simulation == FALSE) ) {
-    ev = eventTable(amount.units="nmol", time.units="days")
-    sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
-    sample.points = sort(sample.points)
-    sample.points = unique(sample.points)
-    ev$add.sampling(sample.points)
-    
-    #add dur  tau for a long infusion
-    if (infusion == FALSE) {
-      ev$add.dosing(dose=dose.nmol, start.time = tau, nbr.doses=floor(tmax/tau), dosing.interval=tau, dosing.to=compartment)
-    } else {
-      ev$add.dosing(dose=dose.nmol, start.time = tau, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
-    }  
-    
-    init = model$init(param.as.double)
-    out  = model$rxode$solve(model$repar(param.as.double), ev, init)
-    out  = model$rxout(out)
-    
-    out_plot = out %>%
-      select(time,D,T,DT,L,TL) %>%
-      gather(cmt,value,-time)
-    out_last = out_plot[(out$time==max(out$time)),]
-    
-    g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
-    g = g + geom_line()
-    g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
-    g = g + geom_vline(xintercept = tau, linetype = "dotted")
-    g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
-    g = g + xgx_scale_y_log10()
-    g = g + labs(y = "Concentration (nm)", color = "")
-    g = g + ggtitle(paste0("run ", i, 
-                           "\nAFIR_thy  = ",signif(result[[i]]$AFIR_thy,2),
-                           "\nAFIR_sim  = ",signif(result[[i]]$AFIR_sim,2),
-                           "\nSCIM_sim = ",signif(result[[i]]$SCIM_sim,2)))
-    print(g)
+  n_sim = 200
+  if ( ((i %% n_sim)==1) & (result[[i]]$error_simulation == FALSE) ) {
+    plot_param(result[[i]],model)
   }
-}
+  }
 stop_time = Sys.time()
 cat("Total time: total_duration\n")
 total_duration = (stop_time-start_time)
