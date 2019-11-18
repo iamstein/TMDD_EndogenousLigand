@@ -28,6 +28,7 @@ for (dose_original in c(10,100,1000))
 {
 
 
+cat(paste("dose = ", dose_original, "mg/kg\n"))
 result = list()
 i_row = 0
 for (drug in drugs){ #loop over all the drugs in the list
@@ -90,7 +91,7 @@ print(g)
 #plot results ----
 data_plot = results %>%
   select(param_value, drug, param_name, TLss_frac_change, TL0_05tau_frac_change,
-                SCIM_sim, AFIR_thy, SCIM_adhoc_thy) %>%
+                SCIM_sim, AFIR_thy, SCIM_Lfold_adhoc_thy) %>%
   gather(key,value,-c(drug,param_name,param_value,TLss_frac_change, TL0_05tau_frac_change)) %>%
   mutate(AFIR_SCIM  = ifelse(str_detect(key,"AFIR"),"AFIR","SCIM"),
          theory_sim = ifelse(str_detect(key,"sim"),"sim","thy"),
@@ -118,11 +119,11 @@ g = g + xgx_scale_x_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1)
 g = g + xgx_scale_y_log10(breaks = c(1e-4,1e-2,1,100,1e4))#, minor_breaks = 1)
 g = g + scale_color_manual(values = c("AFIR_thy" = "red",
                                       "SCIM_sim" = "black",
-                                      "SCIM_adhoc_thy" = "green4",
+                                      "SCIM_Lfold_adhoc_thy" = "green4",
                                       "SCIM_thy" = "blue"))
 g = g + scale_linetype_manual(values = c("AFIR_thy" = "dotted",
                                          "SCIM_sim" = "solid",
-                                         "SCIM_adhoc_thy" = "longdash",
+                                         "SCIM_Lfold_adhoc_thy" = "longdash",
                                          "SCIM_thy" = "dashed"))
 g = g + ggtitle(paste0("Dose = ",dose_original," mg/kg"))
 g = xgx_save(17,10,dirs,paste0("reparKdT0L0_",dose_original,"mpk"),status = "")

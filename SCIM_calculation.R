@@ -35,13 +35,19 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) 
   if (pars$keTL == 0) {
     T0    = with(pars,ksynT/keT)
+    L0    = with(pars,ksynL/keL)
+    
     TL0   = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
+    
     Tfold = Ttotss/T0
+    Lfold = Lss/L0
     
     SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
     SCIM_adhoc   = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Tfold)
     SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
     SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
+    SCIM_Lfold       = with(pars, Kss_DT*Tfold*Lfold/Dss)
+    SCIM_Lfold_adhoc = with(pars,(Kss_DT*Tfold*Lfold)/(Dss+Kss_DT*Tfold*Lfold))
     
     #SCIM = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
 
@@ -91,10 +97,15 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     L0_thy  = L0,
     Ttotss_thy = Ttotss,
     Lss_thy = Lss,
-    Dss_thy = Dss,
     Tss_thy  = -99,
-    TLss_thy = -99,
+    TLss_thy = SCIM*TL0,
+    Tfold_thy = Ttotss/T0,
+    Lfold_thy = Lss/L0,
 
+    Dss_thy = Dss,
+    Cavgss_thy = Dss,
+    Ccrit_thy  = with(pars, ksynT/keD),
+    
     AFIR_thy          = AFIR,
     AFIR_simple_thy   = AFIR_simple,
     
@@ -347,10 +358,12 @@ plot_param = function(param = param,
     select(time,D,T,DT,L,TL) %>%
     gather(cmt,value,-time)
   out_last = out_plot[(out$time==max(out$time)),]
-  
+
   g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
   g = g + geom_line()
   g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
+  g = g + geom_hline(yintercept = thy$Ccrit_thy, linetype = "dashed", color = "red")
+  g = g + annotate(geom = "label", x = 0.9*tmax, y = thy$Ccrit_thy, color = "red", label = "Ccrit")
   g = g + geom_vline(xintercept = tau, linetype = "dotted")
   g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
   g = g + xgx_scale_y_log10()

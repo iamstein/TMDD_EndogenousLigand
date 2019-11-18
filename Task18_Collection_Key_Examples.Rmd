@@ -44,7 +44,10 @@ List of assumptions
  * Lss/L0 ~ 1 (no accumulation of ligand)
 
 ```{r, warning = FALSE, message = FALSE}
-g = ggplot(data, aes(AFIR_SCIM_pcterr, fill = assumption_all_AFIR))
+data_plot = data %>%
+  filter(dose_mpk <= 100)
+
+g = ggplot(data_plot, aes(AFIR_SCIM_pcterr*100, fill = assumption_all_AFIR))
 g = g + geom_histogram()
 g = g + xgx_scale_x_log10()
 g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
@@ -67,7 +70,7 @@ List of assumptions.  They are similar to the AFIR assumptions, but now we allow
  * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
 
 ```{r, warning = FALSE, message = FALSE}
-g = ggplot(data, aes(SCIM_SCIM_pcterr, fill = assumption_all_SCIM))
+g = ggplot(data_plot, aes(SCIM_SCIM_pcterr*100, fill = assumption_all_SCIM))
 g = g + geom_histogram()
 g = g + xgx_scale_x_log10()
 g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
@@ -75,7 +78,18 @@ g = g + labs(x = "Percent Error",
              y = "Number of Simulations")
 g = g + ggtitle("SCIM adhoc Lfold theory vs\nSCIM simulation")
 print(g)
+
+x = data_plot %>%
+  filter(assumption_all_SCIM==TRUE) %>%
+  arrange(desc(SCIM_SCIM_pcterr))
+
+plot_param(x[1,],model)
+
 ```
+
+There was one patient with a large error.  Look at them.
+
+
 
 # Here we check that rounding errors are no longer a problem
 ### fixed by setting atol and rtol to 1e-12

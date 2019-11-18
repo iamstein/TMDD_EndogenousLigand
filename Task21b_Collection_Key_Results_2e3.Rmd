@@ -1,0 +1,143 @@
+---
+title: "Task21 - Key Examples, perhaps for discussion"
+author: Andrew Stein
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+# Introduction
+The idea is to identify cases where AFIR theory doesn't match SCIM simulation and understand why and build in tests for this.
+
+# Setup and Read Data
+```{r, warning=FALSE, message=FALSE}
+source("ams_initialize_script.R")
+source("SCIM_calculation.R")  
+source("ivsc_2cmt_RR_V1.R")
+library(RxODE)
+model = ivsc_2cmt_RR_KdT0L0()
+dirs$rscript_name = "Task21_Collection_Key_Results.Rmd"
+dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
+
+data_in = read.csv("results/Task20b_data.csv",stringsAsFactors = FALSE)
+
+data = data_in %>%
+  mutate(target = ifelse(is_soluble==1,"soluble","membrane"))
+
+assumptions = data %>%
+  select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
+  arrange(SCIM_sim)
+nam = names(assumptions) %>%
+  str_replace("^assumption_","")
+names(assumptions) = nam
+```
+# Explore agreement between AFIR theory and SCIM simulation
+
+List of assumptions
+
+ * AFIR < 0.30,
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+ * Lss/L0 ~ 1 (no accumulation of ligand)
+
+```{r, warning = FALSE, message = FALSE}
+data_plot = data
+
+g = ggplot(data_plot, aes(AFIR_SCIM_pcterr*100, fill = assumption_all_AFIR))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + facet_wrap(~target)
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("AFIR theory vs\nSCIM simulation")
+print(g)
+```
+
+
+# Explore agreemnet between SCIM theory and SCIM simulation
+
+List of assumptions.  They are similar to the AFIR assumptions, but now we allow for accumulation of Ligand
+
+ * SCIM < 30%
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+
+```{r, warning = FALSE, message = FALSE}
+g = ggplot(data_plot, aes(SCIM_SCIM_pcterr*100, fill = assumption_all_SCIM))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + facet_wrap(~target)
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("SCIM adhoc Lfold theory vs\nSCIM simulation")
+print(g)
+```
+
+# Look into large error with assumptions - check tol for ODE
+
+```{r, warning = FALSE, message = FALSE}
+data_focus = data %>%
+  filter(assumption_all_SCIM == TRUE) %>%
+  arrange(desc(SCIM_SCIM_pcterr)) %>%
+  mutate(Dss_TLss_thy_ratio = Dss_thy/TLss_thy,
+         Dss_TLss_sim_ratio = Dss_sim/TLss_sim)
+
+data_focus %>%
+  select(id,SCIM_SCIM_pcterr,contains("Dss_TLss")) %>%
+  slice(1:10) %>%
+  kable()
+```
+
+
+# Look at a patient with all assumptions true and large error
+
+### Something strange is going on, with the Dss_sim and Dss_thy
+```{r, warning = FALSE, message = FALSE}
+d = data_focus[1,]
+
+out = plot_param(d,model)
+kable(out$param)
+kable(out$compare)
+print("original simulation result")
+
+Dss_calc = with(d,dose_nmol/CL/tau)
+
+d %>%
+  select(id,Dss_sim, Dss_thy, dose_nmol, CL, tau, T0_sim, L0_sim, TL0_sim, Ttotss_sim, Lss_sim, TLss_sim, AFIR_sim, SCIM_sim, SCIM_Lfold_adhoc_thy) %>%
+  mutate(Dss_calc = Dss_calc) %>%
+  kable()
+```
+
+# Continue looking at patient with all assumptions true and large error
+```{r, warning = FALSE, message = FALSE}
+i=2
+out = plot_param(data_focus[i,],model)
+kable(out$param)
+kable(out$compare)
+
+i=3
+out = plot_param(data_focus[i,],model)
+kable(out$param)
+kable(out$compare)
+
+i=4
+out = plot_param(data_focus[i,],model)
+kable(out$param)
+kable(out$compare)
+
+i=5
+out = plot_param(data_focus[i,],model)
+kable(out$param)
+kable(out$compare)
+
+```
+
