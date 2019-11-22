@@ -367,7 +367,7 @@ plot_param = function(param = param,
   g = g + geom_vline(xintercept = tau, linetype = "dotted")
   g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
   g = g + xgx_scale_y_log10()
-  g = g + labs(y = "Concentration (nm)", color = "")
+  g = g + labs(y = "Concentration (nM)", color = "")
   g = g + ggtitle(paste0(  "id = ",param$id,
                            "\nAFIR_thy                       = ",signif(thy$AFIR_thy,2),
                            "\nAFIR_sim                      = " ,signif(sim$AFIR_sim,2),
@@ -380,8 +380,9 @@ plot_param = function(param = param,
   
   par#unfortunately, kable does not work properly inside for loop
   out = list(
-    param = param_print,
+    param   = param_print,
     compare = compare,
-    plot    = g)
+    plot    = g,
+    sim     = out)
   return(out)
 }

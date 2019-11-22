@@ -116,7 +116,7 @@ mem = mem %>%
 
 g = ggplot(mem,aes(x = L_SCIM_eqn, y = SCIM_sim))
 g = g + geom_point(alpha = .2)
-g = g + labs(x="Lss_sim/Lss_thy")
+g = g + labs(x="(Lss_max - Lss_sim)/(Lss_max - L0)")
 print(g)
 
 #g = ggplot(mem,aes(x = Lss_ratio, y = SCIM_sim))
@@ -200,7 +200,7 @@ print(d$SCIM_sim)
 ### Something strange is going on, with the Dss_sim and Dss_thy
 ```{r, warning = FALSE, message = FALSE}
 x = data_focus
-d = x[2,]
+d = x[1,]
 
 out = plot_param(d,model)
 kable(out$param)
@@ -215,6 +215,10 @@ d %>%
 
 ## Continue looking at patient with all assumptions true and large error
 ```{r, warning = FALSE, message = FALSE}
+out = plot_param(x[2,],model)
+kable(out$param)
+kable(out$compare)
+
 out = plot_param(x[3,],model)
 kable(out$param)
 kable(out$compare)

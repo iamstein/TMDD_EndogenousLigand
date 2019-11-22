@@ -58,13 +58,12 @@ lseq = function(from, to, length.out){
   return(sequence)
 }
 
-drugs = c("Atezolizumab",
-          "Bevacizumab_VEGFR1",
-          "Bevacizumab_VEGFR2",
-          "Pembrolizumab",
-          "Ramucirumab",
-          "Siltuximab",
-          "Tocilizumab")
+#drugs  = c("Atezolizumab", "Bevacizumab_VEGFR1","Bevacizumab_VEGFR2","Pembrolizumab","Ramucirumab", "Siltuximab","Tocilizumab")
+drugs      = c("Atezolizumab", "Bevacizumab","Pembrolizumab","Ramucirumab","Siltuximab","Tocilizumab")
+drug_target= c("mPD-L1"      , "mVEGFR1"    ,"mPD-1"        ,"mVEGFR2"    ,"sIL-6"     ,"mIL-6R") 
+drug_ligand= c("mPD-1"       , "sVEGF"      ,"mPD-L1"       ,"sVEGF"      ,"mIL-6R"    ,"sIL-6")
+drug_order = c( 2            ,  3           , 1             , 4           , 5          , 6    ) 
+
 parameter_files = paste0("parameters/ModelG_",drugs,"_Params.xlsx")
 names(parameter_files) = drugs
 
