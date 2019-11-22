@@ -68,6 +68,7 @@ write.csv(results, file = "results/Task50_SingleDose_Figure.csv")
 #plot results ----
 data_plot = results %>%
   gather(cmt,value,c(D,T,DT,L,TL)) %>%
+  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab")) %>%
   arrange(order) %>%
   mutate(drug = factor(drug, levels = unique(drug)),
          target = paste("Target:",target),
@@ -82,13 +83,14 @@ g = ggplot(data_plot,aes(x=time/7,y=value, color = cmt, group= cmt))
 g = g + geom_line()
 g = g + geom_text(data = data_last, aes(label = cmt), show.legend = FALSE, hjust=0)
 g = g + scale_x_continuous(breaks = seq(-3,100,by=3),
-                           lims   = c(-3,tmax/7+3))
+                           limits = c(-3,tmax/7))
+g = g + labs(x = "Time (Weeks)")
 g = g + xgx_scale_y_log10()
-g = g + facet_wrap(~drug+target+ligand, dir = "v", nrow = 2) 
+g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) 
 g = g + labs(y = "Concentration (nM)", color = "")
 g = g + ggtitle(paste("Dose:",dose_mpk,"mg/kg every three weeks"))
 print(g)
-ggsave(width = 6, height= 6, filename = "./figures/Task50_SingleDose_Drugs.png")
+ggsave(width = 6, height= 3, filename = "./figures/Task50_SingleDose_Drugs.png")
 
 
 

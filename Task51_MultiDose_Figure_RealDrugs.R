@@ -58,6 +58,7 @@ write.csv(results, file = "results/Task51_MultiDose_Figure.csv")
 
 #plot results ----
 data_plot = results %>%
+  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab")) %>%
   select(dose_mpk, drug, target, ligand, order, SCIM_sim, AFIR_thy, SCIM_Lfold_adhoc_thy) %>%
   gather(key,value,-c(drug,dose_mpk,drug,target,ligand,order)) %>%
   arrange(order) %>%
@@ -68,11 +69,14 @@ data_plot = results %>%
                                   c("SCIM_sim","AFIR_thy","SCIM_Lfold_adhoc_thy"),
                                   c("SCIM simulation","AFIR theory","SCIM theory")))
 
-g = ggplot(data_plot, aes(x=dose_mpk,y=value, color = key, linetype = key))
+g = ggplot(data_plot, aes(x=dose_mpk,y=1-value, color = key, linetype = key))
 g = g + geom_line(size = 1, alpha = .5) 
-g = g + facet_wrap(~drug+target+ligand, dir = "v", nrow = 2) ) 
-g = g + xgx_scale_x_log10(breaks = 10^seq(-20,20,by=2))#, minor_breaks = 1) 
-g = g + xgx_scale_y_log10()#, minor_breaks = 1)
+g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) )
+g = g + xgx_scale_x_log10(breaks = 10^seq(-2,20,by=1))#, minor_breaks = 1)
+breaks = c(0,90,99,99.9,99.99)/100
+labels = paste0(breaks*100,"%")
+g = g + xgx_scale_y_reverselog10(breaks = breaks, labels = labels)
+#g = g + xgx_scale_y_log10()#, minor_breaks = 1)
 g = g + scale_color_manual(values = c("AFIR theory"     = "red",
                                       "SCIM simulation" = "black",
                                       "SCIM theory" = "blue"))
@@ -80,17 +84,9 @@ g = g + scale_linetype_manual(values = c("AFIR theory" = "dotted",
                                          "SCIM simulation" = "solid",
                                          "SCIM theory" = "dashed"))
 g = g + labs(x = "Dose (mg/kg) every 3 weeks",
-             y = "Signaling Complex Inhibition Metric (SCIM)",
+             y = "Inhibition Metric",
              caption = "")
 g = g + theme(legend.position = "top")
 
-ggsave(width = 6, height= 6, filename = "./figures/Task51_DoseRange_Drugs.png")
+ggsave(width = 6.5, height= 4, filename = "./figures/Task51_DoseRange_Drugs.png")
 print(g)
-
-
-#explore siltuximab a bit more from results
-p = results %>%
-  filter(drug == "Tocilizumab",round(dose_mpk,-1)==10)
-
-plot_param(p,model,infusion = FALSE)
-
