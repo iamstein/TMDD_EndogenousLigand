@@ -35,13 +35,19 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   #TL0_pos <- ((-b) + sqrt((b^2)-4*a*c))/(2*a) 
   if (pars$keTL == 0) {
     T0    = with(pars,ksynT/keT)
+    L0    = with(pars,ksynL/keL)
+    
     TL0   = with(pars, ksynL*T0/(koff_TL/kon_TL*keL)) # membrane bound keTL=0
+    
     Tfold = Ttotss/T0
+    Lfold = Lss/L0
     
     SCIM         = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1)
     SCIM_adhoc   = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Tfold)
     SCIM_simpler = Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1)
     SCIM_simplest= Tfold*Kss_TL/Lss * 1/(Kss_TL/Lss*(Dss/Kss_DT)        )
+    SCIM_Lfold       = with(pars, Kss_DT*Tfold*Lfold/Dss)
+    SCIM_Lfold_adhoc = with(pars,(Kss_DT*Tfold*Lfold)/(Dss+Kss_DT*Tfold*Lfold))
     
     #SCIM = with(pars, 1/(koff_TL/kon_TL * Dss /(Lss*((koff_DT+keDT)/kon_DT)) + koff_TL/kon_TL/Lss + 1)*(ksynT/(keDT*TL0)))
 
@@ -56,12 +62,18 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
 
     TL0   = ((-b) -sqrt((b^2)-4*a*c))/(2*a)
     T0    = with(pars,(ksynT - keTL*TL0)/keT)
-    Tfold = Ttotss/T0
+    L0    = with(pars,(ksynL - keTL*TL0)/keL)
     
-    SCIM         = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
-    SCIM_adhoc   = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
-    SCIM_simpler = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
-    SCIM_simplest= with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
+    Tfold = Ttotss/T0 #- this is not quite correct.  See simulation 1424 from Task15/16
+    Lfold = Lss/L0
+    #Tfold = with(pars,keT/keDT)
+    
+    SCIM             = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + 1))
+    SCIM_adhoc       = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT + 1) + Ttotss/TL0))
+    SCIM_simpler     = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)     + 1))
+    SCIM_simplest    = with(pars,Ttotss/TL0 * 1/(Kss_TL/Lss*(Dss/Kss_DT)        ))
+    SCIM_Lfold       = with(pars, Kss_DT*Tfold*Lfold/Dss)
+    SCIM_Lfold_adhoc = with(pars,(Kss_DT*Tfold*Lfold)/(Dss+Kss_DT*Tfold*Lfold))
     
     
     #SCIM          = with(pars,Ttotss/((((Kss_TL*Dss*keL)/(Kss_DT*ksynL))+((Kss_TL*keL)/(ksynL))+1)*TL0))
@@ -81,10 +93,19 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   
   lumped_parameters_theory = data.frame(
     T0_thy = T0,
+    TL0_thy = TL0,
+    L0_thy  = L0,
     Ttotss_thy = Ttotss,
     Lss_thy = Lss,
-    Dss_thy = Dss,
+    Tss_thy  = -99,
+    TLss_thy = SCIM*TL0,
+    Tfold_thy = Ttotss/T0,
+    Lfold_thy = Lss/L0,
 
+    Dss_thy = Dss,
+    Cavgss_thy = Dss,
+    Ccrit_thy  = with(pars, ksynT/keD),
+    
     AFIR_thy          = AFIR,
     AFIR_simple_thy   = AFIR_simple,
     
@@ -92,6 +113,8 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     SCIM_adhoc_thy    = SCIM_adhoc,
     SCIM_simpler_thy  = SCIM_simpler,
     SCIM_simplest_thy = SCIM_simplest,
+    SCIM_Lfold_thy    = SCIM_Lfold,
+    SCIM_Lfold_adhoc_thy = SCIM_Lfold_adhoc,
     
     stringsAsFactors = FALSE
   )
@@ -140,7 +163,7 @@ lumped.parameters.simulation = function(model           = model,
   
   error_simulation = FALSE
   out = tryCatch({
-    model$rxode$solve(model$repar(param.as.double), ev, init)
+    model$rxode$solve(model$repar(param.as.double), ev, init, atol = 1e-12, rtol = 1e-12)
   }, error = function(e) {
     data.frame(time = NA, D = NA, T = NA, DT = NA, L = NA, TL = NA)
   })
@@ -183,7 +206,7 @@ lumped.parameters.simulation = function(model           = model,
   } else {
     error_simulation = TRUE
     TL0 = T0 = L0 = Ttotss = Lss = Dss = AFIR = SCIM = 
-      t_last_dose = TLss = TLss_frac_change = TL0_05tau_frac_change = 
+      t_last_dose = TLss = Tss = TLss_frac_change = TL0_05tau_frac_change = 
       TLss_prev = TL05tau = NA
   }
   lumped_parameters_sim = data.frame(
@@ -191,12 +214,13 @@ lumped.parameters.simulation = function(model           = model,
     T0_sim = T0,
     L0_sim = L0,
     Ttotss_sim = Ttotss,
+    Tss_sim = Tss,
     Lss_sim = Lss,
     Dss_sim = Dss,
+    TLss_sim = TLss,
     AFIR_sim = AFIR,
     SCIM_sim = SCIM,
     time_last_dose = t_last_dose,
-    TLss_sim = TLss,
     TLss_frac_change = (TLss-TLss_prev)/TLss, #can be used to check we're at steady state
     TL0_05tau_frac_change = (TL05tau-TL0)/TL0,
     error_simulation = as.numeric(error_simulation),
@@ -269,4 +293,96 @@ compare.thy.sim = function(model                 = model,
   }
   
   return(df_compare)
+}
+
+# plot results ----
+plot_param = function(param = param,
+                      model = model,
+                      infusion = TRUE,
+                      plot_flag = TRUE) {
+  
+  tmax = param$tmax 
+  tau  = param$tau  
+  dose_nmol = param$dose_nmol
+  compartment = 2
+
+  nam   = names(param)
+  options(warn = -1)
+  param_as_double = param %>%
+    as.numeric() %>%
+    setNames(nam)
+  options(warn = 0)
+  param_as_double = param_as_double[model$pin]
+  
+  param_print = param_as_double %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate(id = param$id,
+           CL = signif(keD/V1,2)) %>%
+    select(id, CL,T0,L0,Kd_DT,Kd_TL,kon_DT,kon_TL,keT,keL,keDT,keTL)
+  
+  ev = eventTable(amount.units="nmol", time.units="days")
+  sample.points = c(seq(0, tmax, 0.1), 10^(-3:0)) # sample time, increment by 0.1
+  sample.points = sort(sample.points)
+  sample.points = unique(sample.points)
+  ev$add.sampling(sample.points)
+  if (infusion == FALSE) {
+    ev$add.dosing(dose=dose_nmol, start.time = tau, nbr.doses=floor(tmax/tau), dosing.interval=tau, dosing.to=compartment)
+  } else {
+    ev$add.dosing(dose=dose_nmol, start.time = tau, nbr.doses=floor(tmax/tau)+1, dosing.interval=tau, dosing.to=compartment, dur = tau)
+  }  
+  
+  sim = lumped.parameters.simulation(model, param_as_double, dose_nmol, tmax, tau, compartment, infusion)
+  thy = lumped.parameters.theory    (       param_as_double, dose_nmol,       tau,              infusion)
+  
+  sim_rename = sim
+  nam = names(sim_rename) %>%
+    str_replace_all("_sim$","")
+  names(sim_rename) = nam
+  sim_rename$type = "sim"
+  
+  thy_rename = thy
+  nam = names(thy_rename) %>%
+    str_replace_all("_thy$","")
+  names(thy_rename) = nam
+  thy_rename$type = "thy"
+  
+  compare = bind_rows(sim_rename,thy_rename) %>%
+    select(type,Dss,T0,L0,TL0,Ttotss,Lss,TLss,AFIR,SCIM)
+
+  init = model$init(param_as_double)
+  out  = model$rxode$solve(model$repar(param_as_double), ev, init, atol = 1e-12, rtol = 1e-12)
+  out  = model$rxout(out)
+  
+  out_plot = out %>%
+    select(time,D,T,DT,L,TL) %>%
+    gather(cmt,value,-time)
+  out_last = out_plot[(out$time==max(out$time)),]
+
+  g = ggplot(out_plot,aes(x=time,y=value, color = cmt, group= cmt))
+  g = g + geom_line()
+  g = g + geom_label(data = out_last, aes(label = cmt), show.legend = FALSE, hjust=1)
+  g = g + geom_hline(yintercept = thy$Ccrit_thy, linetype = "dashed", color = "red")
+  g = g + annotate(geom = "label", x = 0.9*tmax, y = thy$Ccrit_thy, color = "red", label = "Ccrit")
+  g = g + geom_vline(xintercept = tau, linetype = "dotted")
+  g = g + xgx_scale_x_time_units(units_dataset = "days", units_plot = "weeks")
+  g = g + xgx_scale_y_log10()
+  g = g + labs(y = "Concentration (nM)", color = "")
+  g = g + ggtitle(paste0(  "id = ",param$id,
+                           "\nAFIR_thy                       = ",signif(thy$AFIR_thy,2),
+                           "\nAFIR_sim                      = " ,signif(sim$AFIR_sim,2),
+                           "\nSCIM_Lfold_adhoc_thy = "          ,signif(thy$SCIM_Lfold_adhoc_thy,2),
+                           "\nSCIM_adhoc_thy           = "      ,signif(thy$SCIM_adhoc_thy,2),
+                           "\nSCIM_sim                      = " ,signif(sim$SCIM_sim,2)))
+  if (plot_flag == TRUE) {
+    print(g)
+  }
+  
+  par#unfortunately, kable does not work properly inside for loop
+  out = list(
+    param   = param_print,
+    compare = compare,
+    plot    = g,
+    sim     = out)
+  return(out)
 }

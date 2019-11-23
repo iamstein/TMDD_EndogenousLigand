@@ -1,0 +1,152 @@
+---
+title: "Task18 - Key Examples, perhaps for discussion"
+author: Andrew Stein
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+# Introduction
+The idea is to identify cases where AFIR theory doesn't match SCIM simulation and understand why and build in tests for this.
+
+# Setup and Read Data
+```{r, warning=FALSE, message=FALSE}
+source("ams_initialize_script.R")
+source("SCIM_calculation.R")  
+source("ivsc_2cmt_RR_V1.R")
+library(RxODE)
+model = ivsc_2cmt_RR_KdT0L0()
+dirs$rscript_name = "Task18_Collection_Key_Examples.Rmd"
+dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
+
+data_in = read.csv("results/Task16c_data.csv",stringsAsFactors = FALSE)
+
+data = data_in
+
+assumptions = data %>%
+  select(id,AFIR_thy,AFIR_sim,SCIM_simplest_thy,SCIM_adhoc_thy,SCIM_sim,starts_with("assumption")) %>%
+  arrange(SCIM_sim)
+nam = names(assumptions) %>%
+  str_replace("^assumption_","")
+names(assumptions) = nam
+```
+# Explore agreement between AFIR theory and SCIM simulation
+
+List of assumptions
+
+ * AFIR < 0.30,
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+ * Lss/L0 ~ 1 (no accumulation of ligand)
+
+```{r, warning = FALSE, message = FALSE}
+data_plot = data %>%
+  filter(dose_mpk <= 100)
+
+g = ggplot(data_plot, aes(AFIR_SCIM_pcterr*100, fill = assumption_all_AFIR))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("AFIR theory vs\nSCIM simulation")
+print(g)
+```
+
+
+# Explore agreemnet between SCIM theory and SCIM simulation
+
+List of assumptions.  They are similar to the AFIR assumptions, but now we allow for accumulation of Ligand
+
+ * SCIM < 30%
+ * Cavgss >> Ttotss (5x larger)
+ * Cavgss >> Kss_DT (5x)
+ * koff_DT > keT (binding faster than elimination)
+ * koff_TL > 1/30 (not too slow)
+ * Cavgss >> Kss_DT*Lss/Kss_TL (enough binding)
+
+```{r, warning = FALSE, message = FALSE}
+g = ggplot(data_plot, aes(SCIM_SCIM_pcterr*100, fill = assumption_all_SCIM))
+g = g + geom_histogram()
+g = g + xgx_scale_x_log10()
+g = g + scale_fill_manual(values = c(`TRUE`="grey50",`FALSE`="pink"))
+g = g + labs(x = "Percent Error",
+             y = "Number of Simulations")
+g = g + ggtitle("SCIM adhoc Lfold theory vs\nSCIM simulation")
+print(g)
+
+x = data_plot %>%
+  filter(assumption_all_SCIM==TRUE) %>%
+  arrange(desc(SCIM_SCIM_pcterr))
+
+plot_param(x[1,],model)
+
+```
+
+There was one patient with a large error.  Look at them.
+
+
+
+# Here we check that rounding errors are no longer a problem
+### fixed by setting atol and rtol to 1e-12
+
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 1770) ,model)
+kable(out$param)
+kable(out$compare)
+
+out = plot_param(data %>% filter(id == 4) ,model)
+kable(out$param)
+kable(out$compare)
+
+```
+
+# Make sure to use "correct" Tfold formula
+
+### Fix - For AFIR to predict SCIM, we require Tfold is right
+
+Here, the AFIR equations is actually wrong.  Because the free target T0 is accumulating much more than expected.  Because T is actually accumulating much more than expected by AFIR (keT/keDT ~ 300), because T0 is lower than expected by AFIR, because most of T is bound to its ligand.
+
+In practice, what would happen in this scenario is that, if we didn't have ligand data, we would actually predict greater accumulation.  And then actually, it might turn out that AFIR would be right!  So hmm, maybe the AFIR formula should really have Ttotss/T0 instead of keT/keDT.  
+
+This is actually an interesting story to tell, here.
+
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 1424) ,model)
+kable(out$param)
+kable(out$compare)
+```
+
+# L accumulates.  Causes a mismatch between AFIR and SCIM  
+
+### Fix - Need to include an L accumulation factor?  Now included in the overleaf document
+
+What if we degine:
+Lfold = Lss/L0
+
+And then we note that
+Lss = L0*Lfold
+
+And that
+Kss_TL = L0*T0/TL0
+
+Then, with a bit of rearranging, we have
+SCIM = Kd*Lfold/Dss
+
+Is that right?  Or do we get a Tfold too?  Need to think a bit more.
+
+
+```{r, warning = FALSE, message = FALSE}
+out = plot_param(data %>% filter(id == 6) ,model)
+kable(out$param)
+kable(out$compare)
+```
+
+# Case where keTL = 0 and koff_TL is slow
+### fix - need the right model, because keTL won't really be zero
+
+Would need two sets of simulations. One with short time (say just a year) and one with long time, to illustrate the point.

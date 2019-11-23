@@ -14,13 +14,13 @@ data    = data_in %>%
                                       AFIR_thy >= 0.05 &  AFIR_thy <= 0.30 ~ "5% <= AFIRthy <= 30%"),
          AFIRsim_category = case_when(AFIR_sim <  0.05 ~ "AFIRsim < 5%",
                                       AFIR_sim >  0.30 ~ "AFIRsim > 30%",
-                                      AFIR_sim >= 0.05 &  AFIR_sim  <= 0.30 ~ "5% <= AFIRthy <= 30%"),
+                                      AFIR_sim >= 0.05 &  AFIR_sim  <= 0.30 ~ "5% <= AFIRsim <= 30%"),
          SCIMthy_category = case_when(SCIM_thy <  0.05 ~ "SCIMthy < 5%",
                                       SCIM_thy >  0.30 ~ "SCIMthy > 30%",
                                       SCIM_thy >= 0.05 &  SCIM_thy  <= 0.30 ~ "5% <= SCIMthy <= 30%"),
          SCIMsim_category = case_when(SCIM_sim <  0.05 ~ "SCIMsim < 5%",
                                       SCIM_sim >  0.30 ~ "SCIMsim > 30%",
-                                      SCIM_sim >= 0.05 &  SCIM_sim  <= 0.30 ~ "5% <= SCIMthy <= 30%"),
+                                      SCIM_sim >= 0.05 &  SCIM_sim  <= 0.30 ~ "5% <= SCIMsim <= 30%"),
          AFIRthy_AFIRsim_category = paste0(AFIRthy_category, ", ", AFIRsim_category),
          AFIRthy_SCIMsim_category = paste0(AFIRthy_category, ", ", SCIMsim_category),
          AFIRsim_SCIMsim_category = paste0(AFIRsim_category, ", ", SCIMsim_category),
@@ -125,7 +125,7 @@ print(g)
 
 #3. SCIMthy vs SCIMsim ----
 data_plot_color = data_plot %>%
-  filter(SCIMthy_SCIMsim_category %in% c("SCIMthy < 5%, SCIMsim < 5%","CIMthy < 5%, SCIMsim > 30%"))
+  filter(SCIMthy_SCIMsim_category %in% c("SCIMthy < 5%, SCIMsim < 5%","SCIMthy < 5%, SCIMsim > 30%"))
 
 g = ggplot(data_plot_color, aes(x=param, y=param_value, group = id, 
                                 color = AFIRsim_SCIMsim_category,
