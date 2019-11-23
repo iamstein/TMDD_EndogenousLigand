@@ -100,6 +100,6 @@ g = g + facet_wrap(~dosereg)
 g = g + annotate("segment",x = low, y = low, xend = high, yend = high, linetype = "dotted")
 g = g + labs(x = "Lratio = [Lmax - Lss(dose)]/[Lmax - L0]",
              y = "SCIM")
-ggsave(width = 6.5, height= 3, filename = "./figures/Task53_Lratio.png")
+ggsave(width = 6.5, height= 3, filename = "./figures/Task53_Lratio_Toci.png")
 print(g)
 
