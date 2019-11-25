@@ -7,8 +7,8 @@ dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 model = ivsc_2cmt_RR_KdT0L0()
 
 # Dose time, frequency, compartment, nominal dose
-tmax = 13*7+21 #days
-tau  = 21   #days
+tmax = 5*28+28 #days
+tau  = 28   #days
 compartment = 2
 n_points = 10
 
@@ -35,14 +35,14 @@ for (infusion in infusion_range) {
              tmax        = tmax,
              tau         = tau,
              dose_nmol   = dose.nmol,
-             dosereg  = ifelse(infusion==TRUE, "continual infusion", "every 3 weeks")) %>%
+             dosereg  = ifelse(infusion==TRUE, "continual infusion", "every 4 weeks")) %>%
       bind_cols(sim,thy)
     
     out = plot_param(par, model, plot_flag = FALSE, infusion = infusion)
     sim = out$sim %>%
       mutate(dose = dose_mpk,
              TL0  = par$TL0_thy,
-             dosereg  = ifelse(infusion==TRUE, "continual infusion", "every 3 weeks"))
+             dosereg  = ifelse(infusion==TRUE, "continual infusion", "every 4 weeks"))
     
     #create result table
     i_row = i_row + 1
@@ -59,6 +59,7 @@ sims    = bind_rows(result_sim) %>%
 #plot results - curves ----
 sims_plot = sims %>%
   select(dose,time,dosereg,D,L,SSIM) %>%
+  mutate(SSIM = SSIM*100) %>%
   gather(cmt,value,c(D,L,SSIM)) %>%
   arrange(desc(dose)) %>%
   mutate(time     = time - 21,
@@ -77,7 +78,7 @@ g = g + geom_line()
 g = g + facet_grid(cmt_name~dosereg, switch = "y", scales = "free")
 g = g + xgx_scale_x_time_units("day")
 g = g + xgx_scale_y_log10()
-g = g + labs(y = "Steady State Inhibition Metric (SSIM) or Concentration (nM)",
+g = g + labs(y = "Steady State Inhibition Metric (SSIM, %) or Concentration (nM)",
              color = "dose mg/kg")
 ggsave(width = 7, height= 6, filename = "./figures/Task53_Dose_Range_Toci.png")
 print(g)
@@ -87,10 +88,10 @@ metrics_toci = metrics %>%
   mutate(Lmax = max(Lss_thy),
          L0   = L0_sim,
          Lss  = Lss_sim,
-         Lratio = (Lss-L0)/(Lmax-L0),
-         SSIM   = 1-SCIM_sim) %>%
+         Lratio = 100*(Lss-L0)/(Lmax-L0),
+         SSIM   = 100*(1-SCIM_sim)) %>%
   mutate(simulation = "Tocilizumab",
-         dosereg = str_replace(dosereg,"every 3 weeks","every 2-4 week dosing")) %>%
+         dosereg = str_replace(dosereg,"every 4 weeks","every 2-4 week dosing")) %>%
   select(Lratio, SSIM, dosereg, simulation)
   
 
@@ -106,12 +107,18 @@ metrics_sensitivity = data_in %>%
 metrics_all = bind_rows(metrics_sensitivity, metrics_toci)
 
 # Lratio plot ----
-low  = 1e-4
-high = 1
-g = ggplot(metrics_all, aes(x = Lratio, y = SSIM, 
+low  = 0
+high = 100
+g = ggplot(metrics_all, aes(x = Lratio*100, y = SSIM*100, 
                             color = simulation, size = simulation, alpha = simulation, shape = simulation))
-g = g + xgx_scale_x_log10(limits = c(low,high))
-g = g + xgx_scale_y_log10(limits = c(low,high))
+#g = g + #xgx_scale_x_log10(limits = c(low,high))
+#g = g + xgx_scale_x_reverselog10()#xgx_scale_y_log10(limits = c(low,high))
+breaks = seq(0,100,by=25)
+labels = paste0(breaks,"%")
+limits = c(low, high)
+g = g + scale_x_continuous(limits = limits, breaks = breaks, labels = labels)
+g = g + scale_y_continuous(limits = limits, breaks = breaks, labels = labels)
+g = g + ylim(c(0,100))
 g = g + geom_point()
 g = g + facet_wrap(~dosereg)
 g = g + annotate("segment",x = low, y = low, xend = high, yend = high, color = "blue", linetype = "dashed")
