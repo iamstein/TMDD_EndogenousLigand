@@ -57,8 +57,7 @@ results = bind_rows(result)
 write.csv(results, file = "results/Task51_MultiDose_Figure.csv")
 
 #plot results ----
-data_plot = results %>%
-  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab")) %>%
+data_plot_all = results %>%
   select(dose_mpk, drug, target, ligand, order, SCIM_sim, AFIR_thy, SCIM_Lfold_adhoc_thy) %>%
   gather(key,value,-c(drug,dose_mpk,drug,target,ligand,order)) %>%
   arrange(order) %>%
@@ -67,7 +66,10 @@ data_plot = results %>%
          ligand = paste("Ligand:",ligand),
          key    = plyr::mapvalues(key,
                                   c("SCIM_sim","AFIR_thy","SCIM_Lfold_adhoc_thy"),
-                                  c("SCIM simulation","AFIR theory","SCIM theory")))
+                                  c("ASIR simulation","AFIR theory","ASIR theory")))
+
+data_plot = data_plot_all %>%  
+  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab"))
 
 g = ggplot(data_plot, aes(x=dose_mpk,y=1-value, color = key, linetype = key))
 g = g + geom_line(size = 1, alpha = .5) 
@@ -78,15 +80,20 @@ labels = paste0(breaks*100,"%")
 g = g + xgx_scale_y_reverselog10(breaks = breaks, labels = labels)
 #g = g + xgx_scale_y_log10()#, minor_breaks = 1)
 g = g + scale_color_manual(values = c("AFIR theory"     = "red",
-                                      "SCIM simulation" = "black",
-                                      "SCIM theory" = "blue"))
+                                      "ASIR simulation" = "black",
+                                      "ASIR theory" = "blue"))
 g = g + scale_linetype_manual(values = c("AFIR theory" = "dotted",
-                                         "SCIM simulation" = "solid",
-                                         "SCIM theory" = "dashed"))
+                                         "ASIR simulation" = "solid",
+                                         "ASIR theory" = "dashed"))
 g = g + labs(x = "Dose (mg/kg) every 3 weeks",
-             y = "Inhibition Metric",
+             y = "Steady State Inhibition Metric\nSSIM = 1 - TLss/TL0",
              caption = "")
 g = g + theme(legend.position = "top")
 
 ggsave(width = 6.5, height= 4, filename = "./figures/Task51_DoseRange_Drugs.png")
 print(g)
+
+g = g %+% data_plot_all
+ggsave(width = 6.5, height= 7, filename = "./figures/Task51_DoseRange_All6_Drugs.png")
+print(g)
+

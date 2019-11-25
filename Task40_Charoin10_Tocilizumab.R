@@ -60,18 +60,18 @@ sim_plot = sim %>%
   filter(val_nM>0)
 
 sim_last = sim_plot %>%
-  filter(time == max(time)) %>%
+  filter(time == 56) %>%
   bind_rows(data.frame(
     time = max(sim$time),
     species = "soluble IL-6R (-)",
-    val_nM  = 2e-1)) %>%
+    val_nM  = 1.8)) %>%
   arrange(desc(val_nM))
 
 sim_plot = sim_plot %>%
   bind_rows(data.frame(
     time = max(sim$time),
     species = "soluble IL-6R (-)",
-    val_nM  = 2e-1)) %>%
+    val_nM  = 2e0)) %>%
   mutate(species = factor(species, levels = unique(sim_last$species)))
 
 data_plot = data %>%
