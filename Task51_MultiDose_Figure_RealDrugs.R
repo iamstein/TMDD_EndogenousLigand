@@ -96,7 +96,7 @@ data_plot = data_plot_all %>%
 g = ggplot(data_plot, aes(x=dose_mpk,y=1-value, color = key, linetype = key))
 g = g + geom_line(size = 1, alpha = .5) 
 #g = g + geom_point(data = data_assumption_false, color = "red", show.legend = FALSE)
-g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) )
+g = g + facet_wrap(~drug+target+ligand, nrow = 1)#, dir = "v", nrow = 2) )
 g = g + xgx_scale_x_log10(breaks = 10^seq(-2,20,by=1))#, minor_breaks = 1)
 breaks = c(0,90,99,99.9,99.99)/100
 labels = paste0(breaks*100,"%")
@@ -117,13 +117,5 @@ ggsave(width = 6.5, height= 4, filename = "./figures/Task51_DoseRange_Drugs.png"
 print(g)
 
 g = g %+% data_plot_all
-ggsave(width = 6.5, height= 7, filename = "./figures/Task51_DoseRange_All6_Drugs.png")
-print(g)
-
-stop()
-p = results %>%
-  filter(drug == "Atezolizumab" & round(dose_mpk)==3)
-out = plot_param(p,model,infusion = FALSE, plot_flag = FALSE)
-g = out$plot
-g = g + ggtitle("Atezo parameters are not quite right -- too much target in blood")
+ggsave(width = 8, height= 4, filename = "./figures/Task51_DoseRange_All6_Drugs.png")
 print(g)

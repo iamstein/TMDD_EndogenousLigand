@@ -73,10 +73,10 @@ sims_plot = sims %>%
   mutate(cmt_name = factor(cmt_name,levels = c("Tocilizumab (D)", "IL-6 (L)", "SSIM (1-TLss/TL0)")))
 
 
-g = ggplot(sims_plot, aes(x=time,y=value, color = dose, group = dose))
+g = ggplot(sims_plot, aes(x=time-7,y=value, color = dose, group = dose))
 g = g + geom_line() 
 g = g + facet_grid(cmt_name~dosereg, switch = "y", scales = "free")
-g = g + xgx_scale_x_time_units("day")
+g = g + xgx_scale_x_time_units("day", limits = c(0,90)-7)
 g = g + xgx_scale_y_log10()
 g = g + labs(y = "Steady State Inhibition Metric (SSIM, %) or Concentration (nM)",
              color = "dose mg/kg")

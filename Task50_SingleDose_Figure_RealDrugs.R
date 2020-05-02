@@ -1,7 +1,7 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$rscript_name = "Task51_MultiDose_Figure_RealDrugs.R"
+dirs$rscript_name = "Task50_SingleDose_Figure_RealDrugs.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_KdT0L0()
@@ -91,16 +91,16 @@ g = g + scale_x_continuous(breaks = seq(-3,100,by=3),
                            limits = c(-3,tmax/7))
 g = g + labs(x = "Time (Weeks)")
 g = g + xgx_scale_y_log10()
-g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) 
+g = g + facet_wrap(~drug+target+ligand, nrow = 1)#, dir = "v", nrow = 2) 
 g = g + labs(y = "Concentration (nM)", color = "")
 g = g + ggtitle(paste("Dose:",dose_mpk,"mg/kg every three weeks"))
 print(g)
 ggsave(width = 6, height= 3, filename = "./figures/Task50_SingleDose_Drugs.png")
 
 g = g %+% data_plot_all
-g = g + facet_wrap(~drug+target+ligand, dir = "v", nrow = 2) 
+g = g + facet_wrap(~drug+target+ligand, dir = "v", nrow = 1) 
 g = g + geom_text(data = data_last_all, aes(label = cmt), show.legend = FALSE, hjust=0)
 print(g)
-ggsave(width = 6, height= 6, filename = "./figures/Task50_SingleDose_All6_Drugs.png")
+ggsave(width = 8, height= 3, filename = "./figures/Task50_SingleDose_All6_Drugs.png")
 
 

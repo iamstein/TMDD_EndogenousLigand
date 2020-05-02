@@ -1,7 +1,7 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$rscript_name = "Task40_Charoin10_Tocilizumab.R"
+dirs$rscript_name = "Task41_Charoin10_Tocilizumab_Simple.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_KdT0L0()
@@ -90,5 +90,5 @@ g = g + geom_vline(xintercept = 7, alpha = .5)
 g = g + scale_shape_manual(values = c(16,17,46,46,15,46))
 g = g + scale_linetype_manual(values = c("solid","blank","solid","solid","solid","solid"))
 print(g)
-ggsave(width = 6.5, height= 3, filename = "./figures/Task40_Tocilizumab.png")
+ggsave(width = 6.5, height= 3, filename = "./figures/Task41_Tocilizumab.png")
 

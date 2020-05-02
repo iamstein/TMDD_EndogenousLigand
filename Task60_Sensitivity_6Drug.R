@@ -117,6 +117,6 @@ g = g + scale_linetype_manual(values = c("AFIR theory" = "dotted",
 g = g + ggtitle(paste0("Dose = ",dose_original," mg/kg"))
 g = g + theme(legend.position = "top")
 filename = paste0("figures/Task60_sensitivity_6drug_",dose_original,"mpk.png")
-ggsave(width = 10, height= 8, filename = filename)
+ggsave(width = 10, height= 6, filename = filename)
 print(g)
 }
