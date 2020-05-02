@@ -4,7 +4,7 @@ This work was started as part of the 2018 Novartis-Academia Quantitative Hackath
 ## Folder organization
 
 * data/       - contains data from Charoin presentation for Tocilizumab
-* parameters/ - contains parameter files and data
+* parameters/ - contains parameter files and data.  numbers for the IL-6/IL-6R and PD-1/PD-L1 are what was used in the paper.  Numbers for VEGF/VEGFR are more questionable and we are not confident they are all correct.  We could not find enough data for the VEGF/VEGFR drugs.  Therefore, they are not referenced in the paper.  But we keep our work here in case it is later helpful as a starting point.
 * results/    - where results of some scripts were stored.  These results are mostly old and not used in the manuscript
 * figures/    - contains figures and tables used in the manuscript
 
