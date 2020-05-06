@@ -1,7 +1,7 @@
 source("ams_initialize_script.R")
 source("SCIM_calculation.R")  
 source("ivsc_2cmt_RR_V1.R")
-dirs$rscript_name = "Task51_MultiDose_Figure_RealDrugs.R"
+dirs$rscript_name = "Task50_SingleDose_Figure_RealDrugs.R"
 dirs$filename_prefix= str_extract(dirs$rscript_name,"^Task\\d\\d\\w?_")
 
 model = ivsc_2cmt_RR_KdT0L0()
@@ -66,18 +66,23 @@ results = bind_rows(result)
 write.csv(results, file = "results/Task50_SingleDose_Figure.csv")
 
 #plot results ----
-data_plot = results %>%
+data_plot_all = results %>%
   gather(cmt,value,c(D,T,DT,L,TL)) %>%
-  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab")) %>%
   arrange(order) %>%
   mutate(drug = factor(drug, levels = unique(drug)),
          target = paste("Target:",target),
          ligand = paste("Ligand:",ligand)) %>%
   mutate(time = time - 21)
 
-data_last = data_plot %>%
+data_last_all = data_plot_all %>%
   filter(time == max(time)) %>%
   mutate(time = time + 3)
+
+data_plot = data_plot_all %>%
+  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab"))
+
+data_last = data_last_all %>%
+  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab"))
 
 g = ggplot(data_plot,aes(x=time/7,y=value, color = cmt, group= cmt))
 g = g + geom_line()
@@ -86,11 +91,16 @@ g = g + scale_x_continuous(breaks = seq(-3,100,by=3),
                            limits = c(-3,tmax/7))
 g = g + labs(x = "Time (Weeks)")
 g = g + xgx_scale_y_log10()
-g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) 
+g = g + facet_wrap(~drug+target+ligand, nrow = 1)#, dir = "v", nrow = 2) 
 g = g + labs(y = "Concentration (nM)", color = "")
 g = g + ggtitle(paste("Dose:",dose_mpk,"mg/kg every three weeks"))
 print(g)
 ggsave(width = 6, height= 3, filename = "./figures/Task50_SingleDose_Drugs.png")
 
+g = g %+% data_plot_all
+g = g + facet_wrap(~drug+target+ligand, dir = "v", nrow = 1) 
+g = g + geom_text(data = data_last_all, aes(label = cmt), show.legend = FALSE, hjust=0)
+print(g)
+ggsave(width = 8, height= 3, filename = "./figures/Task50_SingleDose_All6_Drugs.png")
 
 

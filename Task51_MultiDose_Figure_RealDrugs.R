@@ -35,9 +35,11 @@ for (drug in drugs){ #loop over all the drugs in the list
     thy = lumped.parameters.theory    (       param.as.double, dose.nmol,       tau)
         
     #all parameter values for the output table
+    K = 2
     par = param.as.double %>% 
       t() %>% 
       as.data.frame() %>%
+      bind_cols(sim,thy) %>%
       mutate(dose_mpk    = dose_mpk,
              drug        = drug,
              target      = drug_target[i_drug],
@@ -46,47 +48,74 @@ for (drug in drugs){ #loop over all the drugs in the list
              id          = i_row,
              tmax        = tmax,
              tau         = tau,
-             dose_nmol   = dose.nmol)
+             dose_nmol   = dose.nmol,
+             koff_DT     = Kd_DT/kon_DT,
+             Kss_DT      = Kd_DT + keDT/kon_DT,
+             koff_TL     = Kd_TL/kon_TL,
+             Kss_TL      = Kd_TL + keDT/kon_TL,
+             assumption_SCIM_lt_30    = SCIM_Lfold_adhoc_thy < 0.30,
+             assumption_drug_gg_Ttot  = Dss_thy > K*Ttotss_thy,
+             assumption_drug_gg_KssDT = Dss_thy > K*Kss_DT,
+             assumption_koffDT_gt_keT = koff_DT > keT,
+             assumption_Dss_gt_Ccrit = Dss_thy > K*Ccrit_thy,
+             assumption_Dss_gg_LssKssDT_KssTL = Dss_thy > K*Kss_DT*Lss_thy/Kss_TL,
+             assumption_ODE_tolerance = Dss_thy/TLss_thy < 1e12,
+             assumption_all_SCIM =    assumption_SCIM_lt_30 & 
+               assumption_drug_gg_Ttot &
+               assumption_Dss_gt_Ccrit &
+               assumption_ODE_tolerance &
+               assumption_Dss_gg_LssKssDT_KssTL)
       
     #create result table
     i_row = i_row + 1
-    result[[i_row]] = bind_cols(sim,thy,par)
+    result[[i_row]] = par
   }
 }
 results = bind_rows(result)
 write.csv(results, file = "results/Task51_MultiDose_Figure.csv")
 
 #plot results ----
-data_plot = results %>%
-  filter(drug %in% c("Tocilizumab","Siltuximab","Atezolizumab")) %>%
-  select(dose_mpk, drug, target, ligand, order, SCIM_sim, AFIR_thy, SCIM_Lfold_adhoc_thy) %>%
-  gather(key,value,-c(drug,dose_mpk,drug,target,ligand,order)) %>%
+data_plot_all = results %>%
+  select(dose_mpk, drug, target, ligand, order, SCIM_sim, AFIR_thy, SCIM_Lfold_adhoc_thy, assumption = assumption_drug_gg_Ttot) %>%
+  gather(key,value,-c(drug,dose_mpk,drug,target,ligand,order,assumption)) %>%
   arrange(order) %>%
   mutate(drug = factor(drug, levels = unique(drug)),
          target = paste("Target:",target),
          ligand = paste("Ligand:",ligand),
          key    = plyr::mapvalues(key,
                                   c("SCIM_sim","AFIR_thy","SCIM_Lfold_adhoc_thy"),
-                                  c("SCIM simulation","AFIR theory","SCIM theory")))
+                                  c("ASIR simulation","AFIR theory","ASIR theory")))
+
+data_plot = data_plot_all %>%  
+  filter(drug %in% c("Atezolizumab","Siltuximab","Tocilizumab"))
+
+# data_assumption_false = data_plot %>%
+#   filter(assumption == FALSE) %>%
+#   filter(key == "ASIR simulation")
 
 g = ggplot(data_plot, aes(x=dose_mpk,y=1-value, color = key, linetype = key))
 g = g + geom_line(size = 1, alpha = .5) 
-g = g + facet_wrap(~drug+target+ligand)#, dir = "v", nrow = 2) )
+#g = g + geom_point(data = data_assumption_false, color = "red", show.legend = FALSE)
+g = g + facet_wrap(~drug+target+ligand, nrow = 1)#, dir = "v", nrow = 2) )
 g = g + xgx_scale_x_log10(breaks = 10^seq(-2,20,by=1))#, minor_breaks = 1)
 breaks = c(0,90,99,99.9,99.99)/100
 labels = paste0(breaks*100,"%")
 g = g + xgx_scale_y_reverselog10(breaks = breaks, labels = labels)
 #g = g + xgx_scale_y_log10()#, minor_breaks = 1)
 g = g + scale_color_manual(values = c("AFIR theory"     = "red",
-                                      "SCIM simulation" = "black",
-                                      "SCIM theory" = "blue"))
+                                      "ASIR simulation" = "black",
+                                      "ASIR theory" = "blue"))
 g = g + scale_linetype_manual(values = c("AFIR theory" = "dotted",
-                                         "SCIM simulation" = "solid",
-                                         "SCIM theory" = "dashed"))
+                                         "ASIR simulation" = "solid",
+                                         "ASIR theory" = "dashed"))
 g = g + labs(x = "Dose (mg/kg) every 3 weeks",
-             y = "Inhibition Metric",
+             y = "Steady State Inhibition Metric\nSSIM = 1 - TLss/TL0",
              caption = "")
 g = g + theme(legend.position = "top")
 
 ggsave(width = 6.5, height= 4, filename = "./figures/Task51_DoseRange_Drugs.png")
+print(g)
+
+g = g %+% data_plot_all
+ggsave(width = 8, height= 4, filename = "./figures/Task51_DoseRange_All6_Drugs.png")
 print(g)

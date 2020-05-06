@@ -60,18 +60,18 @@ sim_plot = sim %>%
   filter(val_nM>0)
 
 sim_last = sim_plot %>%
-  filter(time == max(time)) %>%
+  filter(time == 56) %>%
   bind_rows(data.frame(
     time = max(sim$time),
     species = "soluble IL-6R (-)",
-    val_nM  = 2e-1)) %>%
+    val_nM  = 1.8)) %>%
   arrange(desc(val_nM))
 
 sim_plot = sim_plot %>%
   bind_rows(data.frame(
     time = max(sim$time),
     species = "soluble IL-6R (-)",
-    val_nM  = 2e-1)) %>%
+    val_nM  = 2e0)) %>%
   mutate(species = factor(species, levels = unique(sim_last$species)))
 
 data_plot = data %>%
@@ -84,7 +84,7 @@ g = ggplot(sim_plot,aes(x=time,y=val_nM,
 g = g + geom_line()
 g = g + geom_point(data = data_plot)
 g = g + xgx_scale_x_time_units("day")
-g = g + xgx_scale_y_log10()
+g = g + xgx_scale_y_log10(breaks = 10^(-10:10))
 g = g + labs(y = "Concentration (nM)")
 g = g + geom_vline(xintercept = 7, alpha = .5)
 g = g + scale_shape_manual(values = c(16,17,46,46,15,46))
