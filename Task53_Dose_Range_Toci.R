@@ -98,9 +98,9 @@ metrics_toci = metrics %>%
 data_in = read.csv("results/Task22_2019-11-23_40e3.csv",stringsAsFactors = FALSE)
 metrics_sensitivity = data_in %>%
   mutate(Lmax = Lss_thy,
-         Lratio = (Lss_sim - L0)/(Lmax-L0),
+         Lratio = 100*(Lss_sim - L0)/(Lmax-L0),
          dosereg = ifelse(infusion==1,"continual infusion","every 2-4 week dosing"),
-         SSIM = 1-SCIM_sim,
+         SSIM = 100*(1-SCIM_sim),
          simulation = "Global\nSensitivity\nAnalysis") %>%
   select(Lratio, SSIM, dosereg, simulation)
 
@@ -108,8 +108,8 @@ metrics_all = bind_rows(metrics_sensitivity, metrics_toci)
 
 # Lratio plot ----
 low  = 0
-high = 100
-g = ggplot(metrics_all, aes(x = Lratio*100, y = SSIM*100, 
+high = 110
+g = ggplot(metrics_all, aes(x = Lratio, y = SSIM, 
                             color = simulation, size = simulation, alpha = simulation, shape = simulation))
 #g = g + #xgx_scale_x_log10(limits = c(low,high))
 #g = g + xgx_scale_x_reverselog10()#xgx_scale_y_log10(limits = c(low,high))
