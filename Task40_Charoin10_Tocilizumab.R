@@ -78,17 +78,28 @@ data_plot = data %>%
   filter(species != "CRP") %>%
   mutate(species = factor(species, levels = unique(sim_last$species)))
 
+
+data_plot$time = data_plot$time - 7
+sim_plot$time  = sim_plot$time - 7
+
+sim_last = sim_plot %>%
+  filter(time == 63) %>%
+  mutate(time = time + 1.5,
+         cmt = str_extract(species,"[A-Z]+\\)$"),
+         cmt = str_replace(cmt,"\\)",""))
+
+
 # create plot like in Charoin ----
 g = ggplot(sim_plot,aes(x=time,y=val_nM, 
                         group = species, color = species, shape = species, linetype = species))
 g = g + geom_line()
 g = g + geom_point(data = data_plot)
+g = g + geom_text(data = sim_last, aes(label = cmt), show.legend = FALSE, hjust=0)
 g = g + xgx_scale_x_time_units("day")
 g = g + xgx_scale_y_log10(breaks = 10^(-10:10))
 g = g + labs(y = "Concentration (nM)")
-g = g + geom_vline(xintercept = 7, alpha = .5)
 g = g + scale_shape_manual(values = c(16,17,46,46,15,46))
 g = g + scale_linetype_manual(values = c("solid","blank","solid","solid","solid","solid"))
 print(g)
-ggsave(width = 6.5, height= 3, filename = "./figures/Task40_Tocilizumab.png")
+ggsave(width = 6.5, height= 3.5, filename = "./figures/Task40_Tocilizumab.png")
 
