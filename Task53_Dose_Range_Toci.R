@@ -108,7 +108,7 @@ metrics_all = bind_rows(metrics_sensitivity, metrics_toci)
 
 # Lratio plot ----
 low  = 0
-high = 110
+high = 100
 g = ggplot(metrics_all, aes(x = Lratio, y = SSIM, 
                             color = simulation, size = simulation, alpha = simulation, shape = simulation))
 #g = g + #xgx_scale_x_log10(limits = c(low,high))
@@ -118,7 +118,6 @@ labels = paste0(breaks,"%")
 limits = c(low, high)
 g = g + scale_x_continuous(limits = limits, breaks = breaks, labels = labels)
 g = g + scale_y_continuous(limits = limits, breaks = breaks, labels = labels)
-g = g + ylim(c(0,100))
 g = g + geom_point()
 g = g + facet_wrap(~dosereg)
 g = g + annotate("segment",x = low, y = low, xend = high, yend = high, color = "blue", linetype = "dashed")
