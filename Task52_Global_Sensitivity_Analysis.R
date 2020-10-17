@@ -146,7 +146,7 @@ x = data %>%
   filter(assumption_all_SCIM == TRUE) %>%
   arrange(desc(SCIM_SCIM_ratioerr))
 
-i=2
+i=1
 xi = x[i,]
 summi = plot_param(xi,model,infusion = xi$infusion)
 
