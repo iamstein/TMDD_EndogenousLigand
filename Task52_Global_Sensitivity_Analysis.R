@@ -146,11 +146,12 @@ x = data %>%
   filter(assumption_all_SCIM == TRUE) %>%
   arrange(desc(SCIM_SCIM_ratioerr))
 
-i=1
+i=2
 xi = x[i,]
 summi = plot_param(xi,model,infusion = xi$infusion)
 
-print(summi$compare)
 
+print(summi$param %>% select(Kd_DT, Kd_TL, kon_TL, kon_DT) %>% mutate(koff_DT = Kd_DT*kon_DT, koff_TL = Kd_TL*kon_TL))
+print(summi$compare)
 
 
