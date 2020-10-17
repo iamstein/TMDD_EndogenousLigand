@@ -91,6 +91,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
   AFIR        = with(pars,(Kss_DT*Tfold)/(Dss+Tfold*Kss_DT))
   AFIR_simple = with(pars,(Kss_DT*Tfold)/Dss)
   
+  kon_TL = with(pars, koff_TL/Kd_TL)
   lumped_parameters_theory = data.frame(
     T0_thy = T0,
     TL0_thy = TL0,
@@ -101,6 +102,7 @@ lumped.parameters.theory = function(param.as.double = param.as.double,
     TLss_thy = SCIM*TL0,
     Tfold_thy = Ttotss/T0,
     Lfold_thy = Lss/L0,
+    TssLss_TLss_thy = with(pars, Kd_TL + keTL/kon_TL),
 
     Dss_thy = Dss,
     Cavgss_thy = Dss,
@@ -213,6 +215,8 @@ lumped.parameters.simulation = function(model           = model,
     TL0_sim = TL0,
     T0_sim = T0,
     L0_sim = L0,
+    TssLss_TLss_sim = Tss*Lss/TLss,
+    
     Ttotss_sim = Ttotss,
     Tss_sim = Tss,
     Lss_sim = Lss,
@@ -348,7 +352,8 @@ plot_param = function(param = param,
   thy_rename$type = "thy"
   
   compare = bind_rows(sim_rename,thy_rename) %>%
-    select(type,Dss,T0,L0,TL0,Ttotss,Lss,TLss,AFIR,SCIM)
+    mutate(Kss_TL = param$Kss_TL) %>%
+    select(type, Dss, T0, L0, TL0, Ttotss, Lss, TLss, TssLss_TLss, Kss_TL, AFIR, SCIM)
 
   init = model$init(param_as_double)
   out  = model$rxode$solve(model$repar(param_as_double), ev, init, atol = 1e-12, rtol = 1e-12)

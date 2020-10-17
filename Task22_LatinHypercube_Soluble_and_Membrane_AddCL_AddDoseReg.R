@@ -9,7 +9,7 @@ library(lhs)
 n_samples_simulate = 1e4 #number of parameters to simulate for each target type
 n_samples_start = n_samples_simulate*10 #number of parameters to start with.  Will select only those at reasonable doses.  
 
-tmax        = 7*20 #days (for soluble target, 16 weeks should be long enough)
+tmax        = 7*52*2 #days (for soluble target, 16 weeks should be long enough)
 compartment = 2
 
 model = ivsc_2cmt_RR_KdT0L0()
