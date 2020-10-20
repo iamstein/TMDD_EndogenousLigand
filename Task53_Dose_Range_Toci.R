@@ -95,7 +95,7 @@ metrics_toci = metrics %>%
   select(Lratio, SSIM, dosereg, simulation)
   
 
-data_in = read.csv("results/Task22_2019-11-23_40e3.csv",stringsAsFactors = FALSE)
+data_in = read.csv("results/Task22_2020-10-17_40e3.csv",stringsAsFactors = FALSE)
 metrics_sensitivity = data_in %>%
   mutate(Lmax = Lss_thy,
          Lratio = 100*(Lss_sim - L0)/(Lmax-L0),

@@ -22,17 +22,18 @@ data = data %>%
   mutate(AFIR_SCIM_differr  = ((AFIR_thy             - SCIM_sim)),
          SCIM_SCIM_differr  = ((SCIM_Lfold_adhoc_thy - SCIM_sim)), 
          SCIM_SCIM_ratio    = SCIM_Lfold_adhoc_thy/SCIM_sim,
+         AFIR_SCIM_ratio    = AFIR_thy/SCIM_sim,
          TLss_ratio_sim     = Tss_sim * Lss_sim / TLss_sim,
          Kss_ratio       = Kss_TL/TLss_ratio_sim) %>%
   mutate(assumption_AFIR_lt_30    = AFIR_thy < 0.30,
          assumption_SCIM_lt_30    = SCIM_Lfold_adhoc_thy < 0.30,
-         str_SCIM_lt_30          = ifelse(assumption_SCIM_lt_30,"o SCIM < 30%","x SCIM >= 30%"),
+         str_SCIM_lt_30          = ifelse(assumption_SCIM_lt_30,"*** SCIM < 30% ***","SCIM >= 30%"),
          assumption_drug_gg_LssKssDT_KssTL = Dss_thy > K*Kss_DT*Lss_thy/Kss_TL,
-         str_drug_gg_LssKssDT_KssTL = ifelse(assumption_drug_gg_LssKssDT_KssTL, "o D > 2*Lss*KssDT/KssTL","x D < 2*Lss*KssDT/KssTL"),
+         str_drug_gg_LssKssDT_KssTL = ifelse(assumption_drug_gg_LssKssDT_KssTL, "*** D > 2*Lss*KssDT/KssTL ***","D < 2*Lss*KssDT/KssTL"),
          assumption_drug_gg_Ttot  = Dss_thy > 2*Ttotss_thy,
-         str_drug_gg_Ttot         = ifelse(assumption_drug_gg_Ttot,"o D > 2*Ttot","x D < 2*Ttot"),
+         str_drug_gg_Ttot         = ifelse(assumption_drug_gg_Ttot,"*** D > 2*Ttot ***","D < 2*Ttot"),
          assumption_drug_gg_Ccrit = Dss_thy > 4*Ccrit_thy,
-         str_drug_gg_Ccrit         = ifelse(assumption_drug_gg_Ccrit,"o D > 4*Ccrit","x D < 4*Ccrit"),
+         str_drug_gg_Ccrit         = ifelse(assumption_drug_gg_Ccrit,"*** D > 4*Ccrit ***","D < 4*Ccrit"),
          assumption_ODE_tolerance = Dss_thy/TLss_thy < 1e12,
          assumption_L_noaccum    = Lfold_thy <= 1.1, #then SCIM = AFIR
          assumption_all_AFIR    = assumption_AFIR_lt_30 & 
@@ -51,78 +52,164 @@ data = data %>%
                                      assumption_drug_gg_Ccrit,
                                      assumption_drug_gg_LssKssDT_KssTL),
          assumption_SCIM_str  = paste(ifelse(assumption_SCIM_lt_30, "SCIM<30%; ", "-"),
-                                      ifelse(assumption_drug_gg_Ttot, "D>2*Ttot; ", "-"),
-                                      ifelse(assumption_drug_gg_Ccrit, "D>4*Ccrit; ", "-"),
-                                      ifelse(assumption_drug_gg_LssKssDT_KssTL, "D>Lss*KssDT/KssTL ", "-"),
+                                      ifelse(assumption_drug_gg_Ttot, "Dss>2*Ttot; ", "-"),
+                                      ifelse(assumption_drug_gg_Ccrit, "Dss>4*Ccrit; ", "-"),
+                                      ifelse(assumption_drug_gg_LssKssDT_KssTL, "Dss>Lss*KssDT/KssTL ", "-"),
                                       sep = "\n")) %>%
   arrange(assumption_SCIM_list) %>%
   mutate(assumption_SCIM_str = factor(assumption_SCIM_str, levels = unique(assumption_SCIM_str)))
 
 data = data %>% 
-  mutate(small_error = ifelse(SCIM_SCIM_ratio > 0.75 & SCIM_SCIM_ratio < 1.25, "yes", "no")) %>%
+  mutate(small_error = case_when(SCIM_SCIM_ratio < 0.75  ~ "<0.75",
+                                 SCIM_SCIM_ratio > 1.25  ~ ">1.25",
+                                 TRUE                    ~ "0.75-1.25"),
+         small_error = factor(small_error, levels = c("<0.75", "0.75-1.25", ">1.25"))) %>%
   filter(error_simulation == 0)
 
 
-data_all_assum_TRUE = data %>% filter(assumption_all_SCIM == TRUE)
+data_all_assume_TRUE = data %>% filter(assumption_all_SCIM == TRUE)
 data_drug_gg_Ccrit  = data %>% filter(assumption_drug_gg_Ccrit == TRUE)
 
 
 # ratio-err SSIM - histogram - grid 4x4 ----
+ntot = nrow(data)
+
+n_summ = data %>% group_by(str_drug_gg_Ccrit, str_SCIM_lt_30, str_drug_gg_Ttot, str_drug_gg_LssKssDT_KssTL, small_error) %>%
+  count() %>%
+  mutate(pct = ifelse(n/ntot*100 > 0.1, 
+                      paste0(signif(n/ntot*100,2),"%"),
+                      "<0.1%")) %>%
+  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
+                          small_error == "<0.75" ~ 7500,
+                          TRUE                   ~ 6250))
+
+n_summ_3cat = data %>% 
+  group_by(small_error) %>%
+  count() %>%
+  mutate(pct = n/ntot*100)
+kable(n_summ_3cat)
+
+n_summ_assumptions = data %>%
+  group_by(assumption_SCIM_str) %>%
+  count() %>%
+  arrange(desc(n))
+
 
 g = ggplot(data, aes(SCIM_SCIM_ratio, fill = small_error))
 g = g + facet_grid(str_drug_gg_Ccrit + str_SCIM_lt_30 ~ str_drug_gg_Ttot + str_drug_gg_LssKssDT_KssTL, 
-                   scales = "free_y", switch = "y")
+                   switch = "y")
 g = g + geom_histogram(binwidth = 0.1, center = 1)
 #breaks = 10^seq(-3,2,by=1)
 #g = g + xgx_scale_x_log10()
 g = g + labs(x    = "ASIR_theory/ASIR_simulation",
              y    = "Number of Simulations",
-             fill = "Ratio between 75-125%")
+             fill = "ASIR_thy/ASIR_sim",
+             color = "ASIR_thy/ASIR_sim")
 #g = g + geom_vline(xintercept = 1, color = "grey30")
 #colors = scales::seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=length(unique(data$assumption_SCIM_str))))
-g = g + scale_fill_manual(values = c(yes = "grey50", no = "red"))
+g = g + xlim(0, 1.5)
+g = g + scale_fill_manual(values = c("red", "grey10","blue"))
+g = g + scale_color_manual(values = c("red", "grey10","blue"))
 
-print(g)
 g1 = g
-ggsave(width = 8, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_4assum_ratio.png")
 
-# focus only when all assumptions met ----
-g = g1 %+% data_all_assum_TRUE
-g = g + scale_x_continuous()
+g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
 print(g)
+ggsave(width = 11.5, height= 7, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_4assume_ratio.png")
 
-# focus only on when Dss_thy > 5*Ccrit
+
+
+# Dss_thy > 4*Ccrit ----
+n_summ = data %>% group_by(str_drug_gg_Ccrit, small_error) %>%
+  count() %>%
+  mutate(pct = ifelse(n/ntot*100 > 0.1, 
+                      paste0(signif(n/ntot*100,2),"%"),
+                      "<0.1%")) %>%
+  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
+                          small_error == "<0.75" ~ 7500,
+                          TRUE                   ~ 6250))
+
+max_ratio = max(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
+min_ratio = min(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
+
+
 g = g1 
 g = g + scale_x_continuous()
 g = g + facet_wrap(~str_drug_gg_Ccrit)
+g = g + geom_vline(xintercept = min_ratio, color = "grey50")
+g = g + geom_vline(xintercept = max_ratio, color = "grey50")
+g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 5, hjust = 0)
+g = g + xlim(c(0,1.4))
 print(g)
+ggsave(width = 8, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_assumeCcrit_ratio.png")
+
+
+# histogram all assumptions met ----
+ntot = nrow(data_all_assume_TRUE)
+n_summ = data_all_assume_TRUE %>% group_by(small_error) %>%
+  count() %>%
+  mutate(pct = ifelse(n/ntot*100 > 0.1, 
+                      paste0(signif(n/ntot*100,2),"%"),
+                      "<0.1%")) %>%
+  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
+                          small_error == "<0.75" ~ 7500,
+                          TRUE                   ~ 6250))
+
+
+g = g1 %+% data_all_assume_TRUE
+g = g + scale_x_continuous()
+g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
+g = g + scale_fill_manual(values = c("grey10","blue"))
+g = g + scale_color_manual(values = c("grey10","blue"))
+print(g)
+ggsave(width = 5, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_ALLassume_ratio.png")
+
 
 #Dss_thy vs Dss_sim based on Ccrit ----
 g = ggplot(data, aes(x = Dss_thy/Ccrit_thy, y = Dss_sim/Dss_thy, color = small_error))
 g = g + geom_point(alpha = 0.1)
 g = g + geom_vline(xintercept = 4)
-g = g + xgx_scale_x_log10(limits = c(1,1000))
+g = g + xgx_scale_x_log10(limits = c(1,1000), breaks = c(1,4,10,100,1000))
 g = g + xgx_scale_y_log10(limits = c(.1, 1.2), breaks = seq(0.1, 1, by = 0.1))
 g = g + labs(x = "Dss_theory/Ccrit",
-             y = "Dss: simulation/theory",
-             fill = "ASIR theory/sim ratio\nbetween 75-125%")
-g = g + scale_color_manual(values = c(yes = "black", no = "red"))
+             y = "Dss_sim/Dss_theory",
+             color = "ASIR theory/sim ratio\nbetween 75-125%")
+g = g + scale_color_manual(values = c("red", "grey10","blue"))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
 print(g)
+ggsave(width = 6.5, height= 4, filename = "./figures//Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
+
 
 
 #Kss_TL vs (Tss*Lss/TLss)-sim ----
 # this shows that the high SCIM ratio correspond to places where 
-g = ggplot(data_all_assum_TRUE, aes(x = Kss_ratio, y = SCIM_SCIM_ratio, color = small_error))
-g = g + geom_point(alpha = .3)
-g = g + labs(x = "Kss_TL / (Tss * Lss / TLss)",
+g = ggplot(data_drug_gg_Ccrit, aes(Kss_ratio, y = SCIM_SCIM_ratio, color = small_error))
+g = g + geom_point(alpha = .5)
+g = g + labs(x = "Kss_TL / (Tss_sim * Lss_sim / TLss_sim)",
              y = "ASIR_theory/ASIR_simulation",
              color = "ASIR theory/sim ratio\nbetween 75-125%")
 #g = g + xgx_scale_x_log10()
 #g = g + xgx_scale_y_log10()
-g = g + scale_color_manual(values = c(yes = "black", no = "red"))
-
+g = g + scale_color_manual(values = c("red","grey10","blue"))
+g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
+ggsave(width = 6.5, height= 4, filename = "./figures//Task52c_GlobalSensitivityAnalysis_KssTL.png")
 print(g)
+
+## SCIM vs AFIR by Lfold----
+g = ggplot(data_drug_gg_Ccrit, aes(x = Lfold_thy, y = AFIR_SCIM_ratio))
+g = g + geom_point(alpha = 0.1)
+g = g + xgx_scale_x_log10()
+g = g + xgx_scale_y_log10(breaks = c(.001, .01, .1, .5, 1, 2))
+g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
+g = g + labs(x = "Fold accumulation of ligand (Lfold)",
+             y = "AFIR_theory/ASIR_simulation ratio")
+g = g + annotate("rect", xmin = 1, xmax = 2000, ymin = 0.5, ymax = 2, alpha = .25, fill = "blue")
+print(g)
+ggsave(width = 5.5, height= 5, filename = "./figures//Task52c_GlobalSensitivityAnalysis_AFIR_vs_SCIM.png")
+
+
+#g = g %+% data_all_assume_TRUE
+#print(g)
 
 stop()
 
