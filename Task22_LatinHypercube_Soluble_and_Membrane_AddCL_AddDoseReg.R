@@ -138,7 +138,7 @@ result = list()
 
 #loop through each simulation
 n_samples = nrow(param)
-for (i in 1:n_samples) { 
+for (i in 39435) { #1:n_samples
   if  ((i %% 100) == 1) {
     cat(paste("run ",i-1," of ", n_samples, "-" , Sys.time(), "\n"))
   }
@@ -150,7 +150,7 @@ for (i in 1:n_samples) {
   
   thy = lumped.parameters.theory    (       param.as.double, dose.nmol,       param$tau[i],              infusion = param$infusion[i])
   sim = lumped.parameters.simulation(model, param.as.double, dose.nmol, tmax, param$tau[i], compartment, infusion = param$infusion[i])
-
+stop()
   #identify runs with issues
   if (!is.na(sim$SCIM_sim)) {
     if (sim$TLss_sim < 0 || sim$SCIM_sim < 0) {
