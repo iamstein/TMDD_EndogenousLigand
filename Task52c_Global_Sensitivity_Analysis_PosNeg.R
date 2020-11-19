@@ -101,7 +101,7 @@ g = g + facet_grid(str_drug_gg_Ccrit + str_SCIM_lt_30 ~ str_drug_gg_Ttot + str_d
 g = g + geom_histogram(binwidth = 0.1, center = 1)
 #breaks = 10^seq(-3,2,by=1)
 #g = g + xgx_scale_x_log10()
-g = g + labs(x    = "ASIR_theory/ASIR_simulation",
+g = g + labs(x    = "ASIR_thy/ASIR_sim",
              y    = "Number of Simulations",
              fill = "ASIR_thy/ASIR_sim",
              color = "ASIR_thy/ASIR_sim")
@@ -125,9 +125,14 @@ n_summ = data %>% group_by(str_drug_gg_Ccrit, small_error) %>%
   mutate(pct = ifelse(n/ntot*100 > 0.1, 
                       paste0(signif(n/ntot*100,2),"%"),
                       "<0.1%")) %>%
-  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
-                          small_error == "<0.75" ~ 7500,
-                          TRUE                   ~ 6250))
+  mutate(yval = 13000,
+         xval = case_when(small_error == ">1.25" ~ 1.5,
+                          small_error == "<0.75" ~ 0,
+                          TRUE                   ~ 0.85))
+
+  # mutate(yval = case_when(small_error == ">1.25" ~ 5000,
+  #                         small_error == "<0.75" ~ 7500,
+  #                         TRUE                   ~ 6250))
 
 max_ratio = max(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
 min_ratio = min(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
@@ -136,13 +141,13 @@ min_ratio = min(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
 g = g1 
 g = g + scale_x_continuous()
 g = g + facet_wrap(~str_drug_gg_Ccrit)
-g = g + geom_vline(xintercept = min_ratio, color = "grey50")
-g = g + geom_vline(xintercept = max_ratio, color = "grey50")
-g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 5, hjust = 0)
-g = g + xlim(c(0,1.4))
+g = g + geom_vline(xintercept = 0.75, color = "red")
+g = g + geom_vline(xintercept = 1.25, color = "blue")
+g = g + geom_text(data = n_summ, aes(x = xval, y = yval, color = small_error, label = pct), size = 4, hjust = 0)
+g = g + xlim(c(0,2))
+g = g + ylim(c(0, 13500))
 print(g)
-ggsave(width = 8, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_assumeCcrit_ratio.png")
-
+ggsave(width = 6, height= 2, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_assumeCcrit_ratio.png")
 
 # histogram all assumptions met ----
 ntot = nrow(data_all_assume_TRUE)
@@ -188,16 +193,16 @@ ggsave(width = 5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAna
 
 #Kss_TL vs (Tss*Lss/TLss)-sim ----
 # this shows that the high SCIM ratio correspond to places where 
-g = ggplot(data_drug_gg_Ccrit, aes(Kss_ratio, y = SCIM_SCIM_ratio, color = small_error))
+g = ggplot(data_drug_gg_Ccrit, aes(Kss_ratio, y = SCIM_SCIM_ratio))#, color = small_error))
 g = g + geom_point(alpha = .5)
-g = g + labs(x = "Kss_TL / (Tss_sim * Lss_sim / TLss_sim)",
-             y = "ASIR_theory/ASIR_simulation",
-             color = "ASIR theory/sim ratio\nbetween 75-125%")
+g = g + labs(x = "(Kss_TL * TLss_sim)/(Tss_sim * Lss_sim)",
+             y = "ASIR_thy/ASIR_sim")
+             #color = "ASIR_thy/ASIR_sim")
 #g = g + xgx_scale_x_log10()
 #g = g + xgx_scale_y_log10()
-g = g + scale_color_manual(values = c("red","grey10","blue"))
+#g = g + scale_color_manual(values = c("red","grey10","blue"))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
-ggsave(width = 6.5, height= 4, filename = "./figures//Task52c_GlobalSensitivityAnalysis_KssTL.png")
+ggsave(width = 3.5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAnalysis_KssTL.png")
 print(g)
 
 ## SCIM vs AFIR by Lfold----
