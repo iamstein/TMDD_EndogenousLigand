@@ -166,18 +166,23 @@ ggsave(width = 5, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnal
 
 
 #Dss_thy vs Dss_sim based on Ccrit ----
-g = ggplot(data, aes(x = Dss_thy/Ccrit_thy, y = Dss_sim/Dss_thy, color = small_error))
-g = g + geom_point(alpha = 0.1)
+g = ggplot(data, aes(x = Dss_thy/Ccrit_thy, y = Dss_sim/Dss_thy, color = small_error, alpha = small_error))
+g = g + geom_point()
 g = g + geom_vline(xintercept = 4)
+g = g + geom_hline(yintercept = 0.75)
+g = g + annotate("rect", xmin = 4, xmax = 1000, ymin = 0.75, ymax = 1.05, alpha = 0.3, fill = "yellow")
 g = g + xgx_scale_x_log10(limits = c(1,1000), breaks = c(1,4,10,100,1000))
-g = g + xgx_scale_y_log10(limits = c(.1, 1.2), breaks = seq(0.1, 1, by = 0.1))
-g = g + labs(x = "Dss_theory/Ccrit",
-             y = "Dss_sim/Dss_theory",
-             color = "ASIR theory/sim ratio\nbetween 75-125%")
+#g = g + xgx_scale_y_log10(limits = c(.1, 1.2), breaks = seq(0.1, 1, by = 0.1))
+g = g + scale_y_continuous(limits = c(0,1.1), breaks = c(0, .25, .5, .75, 1))
+g = g + labs(x = "Dss_thy/Ccrit",
+             y = "Dss_sim/Dss_thy",
+             color = "ASIR_thy/ASIR_sim",
+             alpha = "ASIR_thy/ASIR_sim")
 g = g + scale_color_manual(values = c("red", "grey10","blue"))
+g = g + scale_alpha_manual(values = c(0.02, 0.02, 0.5))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
 print(g)
-ggsave(width = 6.5, height= 4, filename = "./figures//Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
+ggsave(width = 5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
 
 
 
@@ -198,14 +203,18 @@ print(g)
 ## SCIM vs AFIR by Lfold----
 g = ggplot(data_drug_gg_Ccrit, aes(x = Lfold_thy, y = AFIR_SCIM_ratio))
 g = g + geom_point(alpha = 0.1)
-g = g + xgx_scale_x_log10()
+g = g + xgx_scale_x_log10(breaks = c(1, 2, 10, 100, 1000))
 g = g + xgx_scale_y_log10(breaks = c(.001, .01, .1, .5, 1, 2))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
 g = g + labs(x = "Fold accumulation of ligand (Lfold)",
-             y = "AFIR_theory/ASIR_simulation ratio")
-g = g + annotate("rect", xmin = 1, xmax = 2000, ymin = 0.5, ymax = 2, alpha = .25, fill = "blue")
+             y = "AFIR_thy/ASIR_sim")
+g = g + annotate("rect", xmin = .9, xmax = 2, ymin = 0.5, ymax = 2.2, alpha = .3, fill = "yellow")
+#g = g + annotate("rect", xmin = 1, xmax = 2, ymin = 0.001, ymax = 0.5, alpha = .25, fill = "yellow")
+g = g + annotate("segment", x = 1, xend = 3000, y = 0.5, yend = 0.5, color = "black")
+g = g + annotate("segment", x = 2, xend = 2, y = 0.001, yend = 2, color = "black")
+#g = g + geom_vline(xintercept = 2, color = "blue")
 print(g)
-ggsave(width = 5.5, height= 5, filename = "./figures//Task52c_GlobalSensitivityAnalysis_AFIR_vs_SCIM.png")
+ggsave(width = 3, height= 2.5, filename = "./figures//Task52c_GlobalSensitivityAnalysis_AFIR_vs_SCIM.png")
 
 
 #g = g %+% data_all_assume_TRUE
