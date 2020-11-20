@@ -29,11 +29,11 @@ data = data %>%
          assumption_SCIM_lt_30    = SCIM_Lfold_adhoc_thy < 0.30,
          str_SCIM_lt_30          = ifelse(assumption_SCIM_lt_30,"*** SCIM < 30% ***","SCIM >= 30%"),
          assumption_drug_gg_LssKssDT_KssTL = Dss_thy > K*Kss_DT*Lss_thy/Kss_TL,
-         str_drug_gg_LssKssDT_KssTL = ifelse(assumption_drug_gg_LssKssDT_KssTL, "*** D > 2*Lss*KssDT/KssTL ***","D < 2*Lss*KssDT/KssTL"),
+         str_drug_gg_LssKssDT_KssTL = ifelse(assumption_drug_gg_LssKssDT_KssTL, "*** Css > 2*Lss*KssDT/KssTL ***","Css < 2*Lss*KssDT/KssTL"),
          assumption_drug_gg_Ttot  = Dss_thy > 2*Ttotss_thy,
-         str_drug_gg_Ttot         = ifelse(assumption_drug_gg_Ttot,"*** D > 2*Ttot ***","D < 2*Ttot"),
+         str_drug_gg_Ttot         = ifelse(assumption_drug_gg_Ttot,"*** Css > 2*Ttot ***","Css < 2*Ttot"),
          assumption_drug_gg_Ccrit = Dss_thy > 4*Ccrit_thy,
-         str_drug_gg_Ccrit         = ifelse(assumption_drug_gg_Ccrit,"*** D > 4*Ccrit ***","D < 4*Ccrit"),
+         str_drug_gg_Ccrit         = ifelse(assumption_drug_gg_Ccrit,"*** Css > 4*Ccrit ***","Css < 4*Ccrit"),
          assumption_ODE_tolerance = Dss_thy/TLss_thy < 1e12,
          assumption_L_noaccum    = Lfold_thy <= 1.1, #then SCIM = AFIR
          assumption_all_AFIR    = assumption_AFIR_lt_30 & 
@@ -79,9 +79,10 @@ n_summ = data %>% group_by(str_drug_gg_Ccrit, str_SCIM_lt_30, str_drug_gg_Ttot, 
   mutate(pct = ifelse(n/ntot*100 > 0.1, 
                       paste0(signif(n/ntot*100,2),"%"),
                       "<0.1%")) %>%
-  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
-                          small_error == "<0.75" ~ 7500,
-                          TRUE                   ~ 6250))
+  mutate(yval = 11000,
+         xval = case_when(small_error == ">1.25" ~ 1.5,
+                          small_error == "<0.75" ~ 0,
+                          TRUE                   ~ 0.85))
 
 n_summ_3cat = data %>% 
   group_by(small_error) %>%
@@ -107,13 +108,15 @@ g = g + labs(x    = "ASIR_thy/ASIR_sim",
              color = "ASIR_thy/ASIR_sim")
 #g = g + geom_vline(xintercept = 1, color = "grey30")
 #colors = scales::seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=length(unique(data$assumption_SCIM_str))))
-g = g + xlim(0, 1.5)
+g = g + xlim(0, 2)
 g = g + scale_fill_manual(values = c("red", "grey10","blue"))
 g = g + scale_color_manual(values = c("red", "grey10","blue"))
+g = g + geom_vline(xintercept = 0.75, color = "red", alpha = 0.3)
+g = g + geom_vline(xintercept = 1.25, color = "blue", alpha = 0.3)
 
 g1 = g
 
-g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
+g = g + geom_text(data = n_summ, aes(x = xval, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
 print(g)
 ggsave(width = 11.5, height= 7, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_4assume_ratio.png")
 
@@ -141,8 +144,6 @@ min_ratio = min(data_drug_gg_Ccrit$SCIM_SCIM_ratio)
 g = g1 
 g = g + scale_x_continuous()
 g = g + facet_wrap(~str_drug_gg_Ccrit)
-g = g + geom_vline(xintercept = 0.75, color = "red")
-g = g + geom_vline(xintercept = 1.25, color = "blue")
 g = g + geom_text(data = n_summ, aes(x = xval, y = yval, color = small_error, label = pct), size = 4, hjust = 0)
 g = g + xlim(c(0,2))
 g = g + ylim(c(0, 13500))
@@ -150,24 +151,24 @@ print(g)
 ggsave(width = 6, height= 2, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_assumeCcrit_ratio.png")
 
 # histogram all assumptions met ----
-ntot = nrow(data_all_assume_TRUE)
-n_summ = data_all_assume_TRUE %>% group_by(small_error) %>%
-  count() %>%
-  mutate(pct = ifelse(n/ntot*100 > 0.1, 
-                      paste0(signif(n/ntot*100,2),"%"),
-                      "<0.1%")) %>%
-  mutate(yval = case_when(small_error == ">1.25" ~ 5000,
-                          small_error == "<0.75" ~ 7500,
-                          TRUE                   ~ 6250))
-
-
-g = g1 %+% data_all_assume_TRUE
-g = g + scale_x_continuous()
-g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
-g = g + scale_fill_manual(values = c("grey10","blue"))
-g = g + scale_color_manual(values = c("grey10","blue"))
-print(g)
-ggsave(width = 5, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_ALLassume_ratio.png")
+# ntot = nrow(data_all_assume_TRUE)
+# n_summ = data_all_assume_TRUE %>% group_by(small_error) %>%
+#   count() %>%
+#   mutate(pct = ifelse(n/ntot*100 > 0.1, 
+#                       paste0(signif(n/ntot*100,2),"%"),
+#                       "<0.1%")) %>%
+#   mutate(yval = case_when(small_error == ">1.25" ~ 5000,
+#                           small_error == "<0.75" ~ 7500,
+#                           TRUE                   ~ 6250))
+# 
+# 
+# g = g1 %+% data_all_assume_TRUE
+# g = g + scale_x_continuous()
+# g = g + geom_text(data = n_summ, aes(x = 0, y = yval, color = small_error, label = pct), size = 3, hjust = 0)
+# g = g + scale_fill_manual(values = c("grey10","blue"))
+# g = g + scale_color_manual(values = c("grey10","blue"))
+# print(g)
+# ggsave(width = 5, height= 4, filename = "./figures/Task52c_GlobalSensitivityAnalysis_SSIM_ALLassume_ratio.png")
 
 
 #Dss_thy vs Dss_sim based on Ccrit ----
@@ -179,15 +180,15 @@ g = g + annotate("rect", xmin = 4, xmax = 1000, ymin = 0.75, ymax = 1.05, alpha 
 g = g + xgx_scale_x_log10(limits = c(1,1000), breaks = c(1,4,10,100,1000))
 #g = g + xgx_scale_y_log10(limits = c(.1, 1.2), breaks = seq(0.1, 1, by = 0.1))
 g = g + scale_y_continuous(limits = c(0,1.1), breaks = c(0, .25, .5, .75, 1))
-g = g + labs(x = "Dss_thy/Ccrit",
-             y = "Dss_sim/Dss_thy",
+g = g + labs(x = "Css_thy/Ccrit",
+             y = "Css_sim/Css_thy",
              color = "ASIR_thy/ASIR_sim",
              alpha = "ASIR_thy/ASIR_sim")
 g = g + scale_color_manual(values = c("red", "grey10","blue"))
-g = g + scale_alpha_manual(values = c(0.02, 0.02, 0.5))
+g = g + scale_alpha_manual(values = c(0.02, 0.02, 0.3))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
 print(g)
-ggsave(width = 5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
+ggsave(width = 5, height= 3, filename = "./figures/Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
 
 
 
