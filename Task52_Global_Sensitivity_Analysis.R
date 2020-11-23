@@ -83,7 +83,26 @@ g = g + geom_vline(xintercept = 10, color = "grey30")
 print(g)
 ggsave(width = 8, height= 4, filename = "./figures/Task52_GlobalSensitivityAnalysis.png")
 
-# creat histogram based on different assumptions not being true ----
+# diff-err SSIM - histogram - grid 4x4 ----
+g = ggplot(filter(data, infusion == 1), aes(100*SCIM_SCIM_differr))
+#g = g + facet_wrap(~str_drug_gg_Ccrit)
+g = g + facet_grid(str_drug_gg_Ccrit + str_SCIM_lt_30 ~ str_drug_gg_Ttot + str_drug_gg_LssKssDT_KssTL, scales = "free_y", switch ="y")
+#g = g + geom_histogram(aes(y=..density..))
+g = g + geom_histogram()
+breaks = 10^seq(-3,2,by=1)
+g = g + xgx_scale_x_log10(limits = c(2e-4,200), breaks = breaks, labels = paste0(breaks,"%"))
+g = g + labs(x    = "Difference between\ntheoretical metric (AFIR or ASIR)\nand ASIR simulation",
+             y    = "Number of Simulations",
+             fill = "Assumptions \nthat are true")
+g = g + geom_vline(xintercept = 10, color = "grey30")
+#colors = scales::seq_gradient_pal("blue", "red", "Lab")(seq(0,1,length.out=length(unique(data$assumption_SCIM_str))))
+#g = g + scale_fill_manual(values = colors)
+
+print(g)
+ggsave(width = 8, height= 4, filename = "./figures/Task52_GlobalSensitivityAnalysis_SSIM_Assum_differr.png")
+
+
+# diff-err SSIM - histogram - Ccrit ----
 g = ggplot(filter(data, infusion == 1), aes(100*SCIM_SCIM_differr))
 g = g + facet_wrap(~str_drug_gg_Ccrit)
 #g = g + facet_grid(str_drug_gg_Ccrit + str_SCIM_lt_30 ~ str_drug_gg_Ttot + str_drug_gg_LssKssDT_KssTL, scales = "free_y", switch =)
@@ -102,7 +121,7 @@ print(g)
 ggsave(width = 8, height= 4, filename = "./figures/Task52_GlobalSensitivityAnalysis_SSIM_Ccrit_differr.png")
 
 
-# create colored histogram based on different assumptions not being true ----
+# ratio-err SSIM - histogram - Ccrit ----
 g = g + facet_grid()
 g = ggplot(filter(data, infusion == 1), aes(100*SCIM_SCIM_ratioerr))
 g = g + facet_wrap(~str_drug_gg_Ccrit)
@@ -121,7 +140,7 @@ g = g + geom_vline(xintercept = 10, color = "grey30")
 print(g)
 ggsave(width = 8, height= 4, filename = "./figures/Task52_GlobalSensitivityAnalysis_SSIM_Ccrit_Ratioerr.png")
 
-# create colored histogram based on different assumptions not being true ----
+# ratio-err SSIM - histogram - grid 4x4 ----
 g = g + facet_grid()
 g = ggplot(filter(data, infusion == 1), aes(100*SCIM_SCIM_ratioerr))
 #g = g + facet_wrap(~str_drug_gg_Ccrit)
@@ -140,18 +159,66 @@ g = g + geom_vline(xintercept = 10, color = "grey30")
 print(g)
 ggsave(width = 8, height= 4, filename = "./figures/Task52_GlobalSensitivityAnalysis_SSIM_4assum_Ratioerr.png")
 
+# ratio-err - Parallel Coordinates - all assumptions met ----
+param2uniform = function(x) {(log(x) - log(min(x)))/(log(max(x))-log(min(x)))}
+data_plot = data %>%
+  mutate(kratio = (koff_DT+keDT)/(koff_TL+keTL)) %>%
+  mutate_at(vars(AFIR:keDT,dose_mpk,kratio), funs(tf=param2uniform(.))) %>%
+  select(id, infusion, is_soluble, contains("AFIR"),contains("SCIM"), T0_tf:keDT_tf, dose_mpk_tf, kratio_tf, contains("assumption")) %>%
+  gather(param,param_value,-c(id, infusion, is_soluble, keT_keDT_ratio_tf, kratio_tf, contains("AFIR"), contains("SCIM"), contains("assumption"))) %>%
+  mutate(param = str_replace(param,"_tf","")) %>%
+  mutate(ratioerr_lt_10pct = ifelse(SCIM_SCIM_ratioerr < 0.1, "yes","no")) 
 
-#explore the case with teh largest error ----
+#sort by average param value in one category to help with visualization 
+data_summ = data_plot %>%
+  group_by(param) %>%
+  filter(assumption_all_SCIM == TRUE) %>%
+  summarise(x = mean(param_value)) %>%
+  arrange(x) %>%
+  ungroup()
+kable(data_summ)
+
+data_plot = data_plot %>%
+  mutate(param = factor(param,  levels = data_summ$param))
+
+
+g = ggplot(data_plot, aes(x=param,y=param_value, group = id, color = ratioerr_lt_10pct, alpha = ratioerr_lt_10pct))
+g = g + geom_line()
+g = g + facet_grid(infusion~is_soluble)
+g = g + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+g = g + labs(x = "Parameter", y = "Parameter Value")
+g = g + guides(colour = guide_legend(override.aes = list(alpha = 1)))
+g = g + scale_color_manual(values = c(yes = "blue", no = "red"))
+g = g + scale_alpha_manual(values = c(yes = .01, no = 0.01))
+#g = xgx_save(7,7,dirs,"Parallel_Coord","")
+print(g)
+
+# look at dots ----
+g = ggplot(data, aes(x = T0, y = SCIM_SCIM_ratioerr))
+g = g + geom_point(alpha = 0.1)
+g = g + xgx_scale_x_log10()
+g = g + facet_grid(infusion~is_soluble)
+print(g)
+
+stop()
+
+#explore individual patients ----
 x = data %>%
   filter(assumption_all_SCIM == TRUE) %>%
-  arrange(desc(SCIM_SCIM_ratioerr))
+  arrange(desc(SCIM_SCIM_ratioerr)) %>% 
+  mutate(koff_DT = Kd_DT*kon_DT, koff_TL = Kd_TL*kon_TL)
+
+xsub = x %>%
+  select(SCIM_SCIM_ratioerr, SCIM_SCIM_differr, Kss_TL, Kss_DT, koff_TL, koff_DT) %>%
+  mutate(koff_ratio = koff_DT/koff_TL)
 
 i=1
 xi = x[i,]
 summi = plot_param(xi,model,infusion = xi$infusion)
 
-
-print(summi$param %>% select(Kd_DT, Kd_TL, kon_TL, kon_DT) %>% mutate(koff_DT = Kd_DT*kon_DT, koff_TL = Kd_TL*kon_TL))
+print(summi$param %>% select(Kd_DT, Kd_TL, kon_TL, kon_DT))
 print(summi$compare)
+
+
 
 

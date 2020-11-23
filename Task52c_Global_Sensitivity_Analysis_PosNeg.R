@@ -190,20 +190,23 @@ g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
 print(g)
 ggsave(width = 5, height= 3, filename = "./figures/Task52c_GlobalSensitivityAnalysis_Ccrit_ratio.png")
 
-
-
 #Kss_TL vs (Tss*Lss/TLss)-sim ----
 # this shows that the high SCIM ratio correspond to places where 
-g = ggplot(data_drug_gg_Ccrit, aes(Kss_ratio, y = SCIM_SCIM_ratio))#, color = small_error))
-g = g + geom_point(alpha = .5)
+data_plot = data_drug_gg_Ccrit %>%
+  arrange(SCIM_SCIM_ratio) %>%
+  mutate(small_error = factor(small_error, levels = rev(levels(data_drug_gg_Ccrit$small_error))))
+g = ggplot(data_plot, aes(Kss_ratio, y = SCIM_SCIM_ratio, color = small_error))
+g = g + geom_point(alpha = .2)
 g = g + labs(x = "(Kss_TL * TLss_sim)/(Tss_sim * Lss_sim)",
-             y = "ASIR_thy/ASIR_sim")
-             #color = "ASIR_thy/ASIR_sim")
+             y = "ASIR_thy/ASIR_sim",
+             color = "ASIR_thy/ASIR_sim")
 #g = g + xgx_scale_x_log10()
 #g = g + xgx_scale_y_log10()
-#g = g + scale_color_manual(values = c("red","grey10","blue"))
+g = g + scale_color_manual(values = c("blue","grey10","red"))
 g = g + guides(colour = guide_legend(override.aes = list(alpha=1)))
-ggsave(width = 3.5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAnalysis_KssTL.png")
+g = g + geom_hline(yintercept = 0.75, color = "red", alpha = 0.3)
+g = g + geom_hline(yintercept = 1.25, color = "blue", alpha = 0.3)
+ggsave(width = 5, height= 3, filename = "./figures//Task52c_GlobalSensitivityAnalysis_KssTL.png")
 print(g)
 
 ## SCIM vs AFIR by Lfold----

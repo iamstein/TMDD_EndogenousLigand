@@ -7,8 +7,9 @@
 #create plots
 source("Task50_SingleDose_Figure_RealDrugs.R") #plot simulations multiple dosing for 4 drugs studied 
 source("Task51_MultiDose_Figure_RealDrugs.R") #plot dose vs ASIR for multiple dosing at steady state for 4 drugs studied
-source("Task52_Global_Sensitivity_Analysis.R") #historgrams of global sensitivity analysis
+#source("Task52_Global_Sensitivity_Analysis.R") #historgrams of global sensitivity analysis
 source("Task52b_Global_Sensitivity_Analysis_Lratio.R") #Lratio scatter plot (theory vs sim) from global sens analysis sims
+source("Task52c_Global_Sensitivity_Analysis_PosNeg.R")
 source("Task53_Dose_Range_Toci.R") #Simulate Tociliszumab: Drug, Ligand (IL-6), and SSIM
 source("Task60_Sensitivity_6Drug.R") #Local sensitivity analysis for 4 drugs
 
